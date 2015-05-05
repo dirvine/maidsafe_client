@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="Source to the Rust file `/home/travis/.cargo/registry/src/github.com-1ecc6299db9ec823/rust-crypto-0.2.31/src/whirlpool.rs`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang">
+
+    <title>whirlpool.rs.html -- source</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content source"><pre class="line-numbers"><span id="1">  1</span>
+<span id="2">  2</span>
+<span id="3">  3</span>
+<span id="4">  4</span>
+<span id="5">  5</span>
+<span id="6">  6</span>
+<span id="7">  7</span>
+<span id="8">  8</span>
+<span id="9">  9</span>
+<span id="10"> 10</span>
+<span id="11"> 11</span>
+<span id="12"> 12</span>
+<span id="13"> 13</span>
+<span id="14"> 14</span>
+<span id="15"> 15</span>
+<span id="16"> 16</span>
+<span id="17"> 17</span>
+<span id="18"> 18</span>
+<span id="19"> 19</span>
+<span id="20"> 20</span>
+<span id="21"> 21</span>
+<span id="22"> 22</span>
+<span id="23"> 23</span>
+<span id="24"> 24</span>
+<span id="25"> 25</span>
+<span id="26"> 26</span>
+<span id="27"> 27</span>
+<span id="28"> 28</span>
+<span id="29"> 29</span>
+<span id="30"> 30</span>
+<span id="31"> 31</span>
+<span id="32"> 32</span>
+<span id="33"> 33</span>
+<span id="34"> 34</span>
+<span id="35"> 35</span>
+<span id="36"> 36</span>
+<span id="37"> 37</span>
+<span id="38"> 38</span>
+<span id="39"> 39</span>
+<span id="40"> 40</span>
+<span id="41"> 41</span>
+<span id="42"> 42</span>
+<span id="43"> 43</span>
+<span id="44"> 44</span>
+<span id="45"> 45</span>
+<span id="46"> 46</span>
+<span id="47"> 47</span>
+<span id="48"> 48</span>
+<span id="49"> 49</span>
+<span id="50"> 50</span>
+<span id="51"> 51</span>
+<span id="52"> 52</span>
+<span id="53"> 53</span>
+<span id="54"> 54</span>
+<span id="55"> 55</span>
+<span id="56"> 56</span>
+<span id="57"> 57</span>
+<span id="58"> 58</span>
+<span id="59"> 59</span>
+<span id="60"> 60</span>
+<span id="61"> 61</span>
+<span id="62"> 62</span>
+<span id="63"> 63</span>
+<span id="64"> 64</span>
+<span id="65"> 65</span>
+<span id="66"> 66</span>
+<span id="67"> 67</span>
+<span id="68"> 68</span>
+<span id="69"> 69</span>
+<span id="70"> 70</span>
+<span id="71"> 71</span>
+<span id="72"> 72</span>
+<span id="73"> 73</span>
+<span id="74"> 74</span>
+<span id="75"> 75</span>
+<span id="76"> 76</span>
+<span id="77"> 77</span>
+<span id="78"> 78</span>
+<span id="79"> 79</span>
+<span id="80"> 80</span>
+<span id="81"> 81</span>
+<span id="82"> 82</span>
+<span id="83"> 83</span>
+<span id="84"> 84</span>
+<span id="85"> 85</span>
+<span id="86"> 86</span>
+<span id="87"> 87</span>
+<span id="88"> 88</span>
+<span id="89"> 89</span>
+<span id="90"> 90</span>
+<span id="91"> 91</span>
+<span id="92"> 92</span>
+<span id="93"> 93</span>
+<span id="94"> 94</span>
+<span id="95"> 95</span>
+<span id="96"> 96</span>
+<span id="97"> 97</span>
+<span id="98"> 98</span>
+<span id="99"> 99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
+<span id="689">689</span>
+<span id="690">690</span>
+<span id="691">691</span>
+<span id="692">692</span>
+<span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
+<span id="696">696</span>
+<span id="697">697</span>
+<span id="698">698</span>
+<span id="699">699</span>
+<span id="700">700</span>
+<span id="701">701</span>
+<span id="702">702</span>
+<span id="703">703</span>
+<span id="704">704</span>
+<span id="705">705</span>
+<span id="706">706</span>
+<span id="707">707</span>
+<span id="708">708</span>
+<span id="709">709</span>
+<span id="710">710</span>
+<span id="711">711</span>
+<span id="712">712</span>
+<span id="713">713</span>
+<span id="714">714</span>
+<span id="715">715</span>
+<span id="716">716</span>
+<span id="717">717</span>
+<span id="718">718</span>
+<span id="719">719</span>
+<span id="720">720</span>
+<span id="721">721</span>
+<span id="722">722</span>
+<span id="723">723</span>
+<span id="724">724</span>
+<span id="725">725</span>
+<span id="726">726</span>
+<span id="727">727</span>
+<span id="728">728</span>
+<span id="729">729</span>
+<span id="730">730</span>
+<span id="731">731</span>
+<span id="732">732</span>
+<span id="733">733</span>
+<span id="734">734</span>
+<span id="735">735</span>
+<span id="736">736</span>
+<span id="737">737</span>
+<span id="738">738</span>
+<span id="739">739</span>
+<span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
+<span id="772">772</span>
+<span id="773">773</span>
+<span id="774">774</span>
+<span id="775">775</span>
+<span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+</pre><pre class='rust '>
+<span class='comment'>// Licensed under the Apache License, Version 2.0 &lt;LICENSE-APACHE or</span>
+<span class='comment'>// http://www.apache.org/licenses/LICENSE-2.0&gt; or the MIT license</span>
+<span class='comment'>// &lt;LICENSE-MIT or http://opensource.org/licenses/MIT&gt;, at your</span>
+<span class='comment'>// option. This file may not be copied, modified, or distributed</span>
+<span class='comment'>// except according to those terms.</span>
+
+<span class='doccomment'>/*!
+An implementation of the Whirlpool cryptographic hash algorithm.
+
+This is the algorithm recommended by NESSIE (New European Schemes for Signatures,
+Integrity and Encryption; an European research project).
+
+The constants used by Whirlpool were changed twice (2001 and 2003) - this module
+only implements the most recent standard. The two older Whirlpool implementations
+(sometimes called Whirlpool-0 (pre 2001) and Whirlpool-T (pre 2003)) were not used
+much anyway (both have never been recommended by NESSIE).
+
+For details see &lt;http://www.larc.usp.br/~pbarreto/WhirlpoolPage.html&gt;.
+
+# Usage
+
+```rust
+use self::crypto::whirlpool::Whirlpool;
+use self::crypto::digest::Digest;
+
+let mut hasher = Whirlpool::new();
+hasher.input_str(&quot;Hello Whirlpool&quot;);
+let result = hasher.result_str();
+
+assert_eq!(result,
+    concat!(&quot;8eaccdc136903c458ea0b1376be2a5fc&quot;,
+            &quot;9dc5b8ce8892a3b4f43366e2610c206c&quot;,
+            &quot;a373816495e63db0fff2ff25f75aa716&quot;,
+            &quot;2f332c9f518c3036456502a8414d300a&quot;));
+```
+*/</span>
+
+<span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>mem</span>::<span class='ident'>uninitialized</span>;
+<span class='kw'>use</span> <span class='ident'>cryptoutil</span>::{<span class='ident'>write_u64_be</span>, <span class='ident'>FixedBuffer64</span>, <span class='ident'>FixedBuffer</span>};
+<span class='kw'>use</span> <span class='ident'>digest</span>::<span class='ident'>Digest</span>;
+
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Whirlpool</span> {
+    <span class='ident'>bit_length</span>: [<span class='ident'>u8</span>; <span class='number'>32</span>],
+    <span class='ident'>buffer</span>: <span class='ident'>FixedBuffer64</span>,
+    <span class='ident'>hash</span>: [<span class='ident'>u64</span>; <span class='number'>8</span>],
+    <span class='ident'>finalized</span>: <span class='ident'>bool</span>,
+}
+
+<span class='kw'>impl</span> <span class='ident'>Whirlpool</span> {
+    <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>() <span class='op'>-&gt;</span> <span class='ident'>Whirlpool</span> {
+        <span class='ident'>Whirlpool</span>{
+            <span class='ident'>bit_length</span>: [<span class='number'>0</span>; <span class='number'>32</span>],
+            <span class='ident'>buffer</span>: <span class='ident'>FixedBuffer64</span>::<span class='ident'>new</span>(),
+            <span class='ident'>hash</span>: [<span class='number'>0</span>; <span class='number'>8</span>],
+            <span class='ident'>finalized</span>: <span class='boolval'>false</span>,
+        }
+    }
+}
+
+<span class='kw'>impl</span> <span class='ident'>Digest</span> <span class='kw'>for</span> <span class='ident'>Whirlpool</span> {
+    <span class='kw'>fn</span> <span class='ident'>input</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>source</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>]) {
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='op'>!</span><span class='self'>self</span>.<span class='ident'>finalized</span>);
+
+        <span class='comment'>// (byte length * 8) = (bit lenght) converted in a 72 bit uint</span>
+        <span class='kw'>let</span> <span class='ident'>len</span> <span class='op'>=</span> <span class='ident'>source</span>.<span class='ident'>len</span>() <span class='kw'>as</span> <span class='ident'>u64</span>;
+        <span class='kw'>let</span> <span class='ident'>len_bits</span> <span class='op'>=</span> [
+            ((<span class='ident'>len</span> <span class='op'>&gt;&gt;</span> (<span class='number'>56</span> <span class='op'>+</span> <span class='number'>5</span>))       ) <span class='kw'>as</span> <span class='ident'>u8</span>,
+            ((<span class='ident'>len</span> <span class='op'>&gt;&gt;</span> (<span class='number'>48</span> <span class='op'>+</span> <span class='number'>5</span>)) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>,
+            ((<span class='ident'>len</span> <span class='op'>&gt;&gt;</span> (<span class='number'>40</span> <span class='op'>+</span> <span class='number'>5</span>)) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>,
+            ((<span class='ident'>len</span> <span class='op'>&gt;&gt;</span> (<span class='number'>32</span> <span class='op'>+</span> <span class='number'>5</span>)) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>,
+            ((<span class='ident'>len</span> <span class='op'>&gt;&gt;</span> (<span class='number'>24</span> <span class='op'>+</span> <span class='number'>5</span>)) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>,
+            ((<span class='ident'>len</span> <span class='op'>&gt;&gt;</span> (<span class='number'>16</span> <span class='op'>+</span> <span class='number'>5</span>)) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>,
+            ((<span class='ident'>len</span> <span class='op'>&gt;&gt;</span> ( <span class='number'>8</span> <span class='op'>+</span> <span class='number'>5</span>)) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>,
+            ((<span class='ident'>len</span> <span class='op'>&gt;&gt;</span> ( <span class='number'>0</span> <span class='op'>+</span> <span class='number'>5</span>)) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>,
+            ((<span class='ident'>len</span> <span class='op'>&lt;&lt;</span> <span class='number'>3</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>,
+        ];
+
+        <span class='comment'>// adds the 72 bit len_bits to the 256 bit self.bit_length</span>
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>carry</span> <span class='op'>=</span> <span class='boolval'>false</span>;
+        <span class='kw'>for</span> <span class='ident'>i</span> <span class='kw'>in</span> <span class='number'>0</span>..<span class='number'>32</span> {
+            <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>x</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>bit_length</span>[<span class='self'>self</span>.<span class='ident'>bit_length</span>.<span class='ident'>len</span>() <span class='op'>-</span> <span class='ident'>i</span> <span class='op'>-</span> <span class='number'>1</span>] <span class='kw'>as</span> <span class='ident'>u16</span>;
+            
+            <span class='kw'>if</span> <span class='ident'>i</span> <span class='op'>&lt;</span> <span class='ident'>len_bits</span>.<span class='ident'>len</span>() {
+                <span class='ident'>x</span> <span class='op'>+=</span> <span class='ident'>len_bits</span>[<span class='ident'>len_bits</span>.<span class='ident'>len</span>() <span class='op'>-</span> <span class='ident'>i</span> <span class='op'>-</span> <span class='number'>1</span>] <span class='kw'>as</span> <span class='ident'>u16</span>;
+            } <span class='kw'>else</span> <span class='kw'>if</span> <span class='op'>!</span><span class='ident'>carry</span> {
+                <span class='kw'>break</span>;
+            }
+
+            <span class='kw'>if</span> <span class='ident'>carry</span> {
+                <span class='ident'>x</span> <span class='op'>+=</span> <span class='number'>1</span>;
+            }
+            
+            <span class='ident'>carry</span> <span class='op'>=</span> <span class='ident'>x</span> <span class='op'>&gt;</span> <span class='number'>0xff</span>;
+            <span class='kw'>let</span> <span class='ident'>pos</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>bit_length</span>.<span class='ident'>len</span>() <span class='op'>-</span><span class='ident'>i</span> <span class='op'>-</span> <span class='number'>1</span>;
+            <span class='self'>self</span>.<span class='ident'>bit_length</span>[<span class='ident'>pos</span>] <span class='op'>=</span> (<span class='ident'>x</span> <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>u8</span>;
+        }
+
+        <span class='comment'>// process the data itself</span>
+        <span class='kw'>let</span> <span class='ident'>hash</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>.<span class='ident'>hash</span>;
+        <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>input</span>(<span class='ident'>source</span>, <span class='op'>|</span><span class='ident'>b</span><span class='op'>|</span> { <span class='ident'>process_buffer</span>(<span class='ident'>hash</span>, <span class='ident'>b</span>); });
+    }
+
+    <span class='kw'>fn</span> <span class='ident'>result</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>, <span class='ident'>out</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> [<span class='ident'>u8</span>]) {
+        <span class='kw'>if</span> <span class='op'>!</span><span class='self'>self</span>.<span class='ident'>finalized</span> {
+            <span class='self'>self</span>.<span class='ident'>finalized</span> <span class='op'>=</span> <span class='boolval'>true</span>;
+
+            <span class='comment'>// padding</span>
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>remaining</span>() <span class='op'>&gt;=</span> <span class='number'>1</span>);
+            <span class='kw'>let</span> <span class='ident'>hash</span> <span class='op'>=</span> <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>.<span class='ident'>hash</span>;
+            <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>input</span>(<span class='kw-2'>&amp;</span>[<span class='number'>0b10000000</span>], <span class='op'>|</span><span class='ident'>b</span><span class='op'>|</span> { <span class='ident'>process_buffer</span>(<span class='ident'>hash</span>, <span class='ident'>b</span>); });
+
+            <span class='kw'>if</span> <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>remaining</span>() <span class='op'>&lt;</span> <span class='self'>self</span>.<span class='ident'>bit_length</span>.<span class='ident'>len</span>() {
+                <span class='kw'>let</span> <span class='ident'>size</span> <span class='op'>=</span> <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>size</span>();
+                <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>zero_until</span>(<span class='ident'>size</span>);
+                <span class='ident'>process_buffer</span>(<span class='ident'>hash</span>, <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>full_buffer</span>());
+            }
+
+            <span class='comment'>// length</span>
+            <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>zero_until</span>(<span class='number'>32</span>);
+            <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>input</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>.<span class='ident'>bit_length</span>, <span class='op'>|</span><span class='ident'>b</span><span class='op'>|</span> { <span class='ident'>process_buffer</span>(<span class='ident'>hash</span>, <span class='ident'>b</span>); });
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>position</span>() <span class='op'>==</span> <span class='number'>0</span>);
+        }
+
+        <span class='comment'>// done!</span>
+        <span class='ident'>write_u64_be</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>out</span>[<span class='number'>0</span>..<span class='number'>8</span>], <span class='self'>self</span>.<span class='ident'>hash</span>[<span class='number'>0</span>]);
+        <span class='ident'>write_u64_be</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>out</span>[<span class='number'>8</span>..<span class='number'>16</span>], <span class='self'>self</span>.<span class='ident'>hash</span>[<span class='number'>1</span>]);
+        <span class='ident'>write_u64_be</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>out</span>[<span class='number'>16</span>..<span class='number'>24</span>], <span class='self'>self</span>.<span class='ident'>hash</span>[<span class='number'>2</span>]);
+        <span class='ident'>write_u64_be</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>out</span>[<span class='number'>24</span>..<span class='number'>32</span>], <span class='self'>self</span>.<span class='ident'>hash</span>[<span class='number'>3</span>]);
+        <span class='ident'>write_u64_be</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>out</span>[<span class='number'>32</span>..<span class='number'>40</span>], <span class='self'>self</span>.<span class='ident'>hash</span>[<span class='number'>4</span>]);
+        <span class='ident'>write_u64_be</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>out</span>[<span class='number'>40</span>..<span class='number'>48</span>], <span class='self'>self</span>.<span class='ident'>hash</span>[<span class='number'>5</span>]);
+        <span class='ident'>write_u64_be</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>out</span>[<span class='number'>48</span>..<span class='number'>56</span>], <span class='self'>self</span>.<span class='ident'>hash</span>[<span class='number'>6</span>]);
+        <span class='ident'>write_u64_be</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>out</span>[<span class='number'>56</span>..<span class='number'>64</span>], <span class='self'>self</span>.<span class='ident'>hash</span>[<span class='number'>7</span>]);
+    }
+
+    <span class='kw'>fn</span> <span class='ident'>reset</span>(<span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='self'>self</span>) {
+        <span class='self'>self</span>.<span class='ident'>bit_length</span> <span class='op'>=</span> [<span class='number'>0</span>; <span class='number'>32</span>];
+        <span class='self'>self</span>.<span class='ident'>buffer</span>.<span class='ident'>reset</span>();
+        <span class='self'>self</span>.<span class='ident'>finalized</span> <span class='op'>=</span> <span class='boolval'>false</span>;
+        <span class='self'>self</span>.<span class='ident'>hash</span> <span class='op'>=</span> [<span class='number'>0</span>; <span class='number'>8</span>];    
+    }
+
+    <span class='kw'>fn</span> <span class='ident'>output_bits</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>usize</span> {
+        <span class='number'>512</span>
+    }
+
+    <span class='kw'>fn</span> <span class='ident'>block_size</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='ident'>usize</span> {
+        <span class='number'>512</span>
+    }
+}
+
+<span class='kw'>fn</span> <span class='ident'>process_buffer</span>(<span class='ident'>hash</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span>[<span class='ident'>u64</span>; <span class='number'>8</span>], <span class='ident'>buffer</span>: <span class='kw-2'>&amp;</span>[<span class='ident'>u8</span>]) {
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>k</span>: [<span class='ident'>u64</span>; <span class='number'>8</span>] <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>uninitialized</span>() };
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>block</span>: [<span class='ident'>u64</span>; <span class='number'>8</span>] <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>uninitialized</span>() };
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>state</span>: [<span class='ident'>u64</span>; <span class='number'>8</span>] <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>uninitialized</span>() };
+    <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>l</span>: [<span class='ident'>u64</span>; <span class='number'>8</span>] <span class='op'>=</span> <span class='kw'>unsafe</span> { <span class='ident'>uninitialized</span>() };
+
+    <span class='kw'>for</span> <span class='ident'>i</span> <span class='kw'>in</span> <span class='number'>0</span>..<span class='number'>8</span> {
+        <span class='ident'>block</span>[<span class='ident'>i</span>] <span class='op'>=</span>
+            ((<span class='ident'>buffer</span>[<span class='ident'>i</span> <span class='op'>*</span> <span class='number'>8</span> <span class='op'>+</span> <span class='number'>0</span>] <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span> <span class='number'>56</span>) <span class='op'>^</span>
+            ((<span class='ident'>buffer</span>[<span class='ident'>i</span> <span class='op'>*</span> <span class='number'>8</span> <span class='op'>+</span> <span class='number'>1</span>] <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span> <span class='number'>48</span>) <span class='op'>^</span>
+            ((<span class='ident'>buffer</span>[<span class='ident'>i</span> <span class='op'>*</span> <span class='number'>8</span> <span class='op'>+</span> <span class='number'>2</span>] <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span> <span class='number'>40</span>) <span class='op'>^</span>
+            ((<span class='ident'>buffer</span>[<span class='ident'>i</span> <span class='op'>*</span> <span class='number'>8</span> <span class='op'>+</span> <span class='number'>3</span>] <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span> <span class='number'>32</span>) <span class='op'>^</span>
+            ((<span class='ident'>buffer</span>[<span class='ident'>i</span> <span class='op'>*</span> <span class='number'>8</span> <span class='op'>+</span> <span class='number'>4</span>] <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span> <span class='number'>24</span>) <span class='op'>^</span>
+            ((<span class='ident'>buffer</span>[<span class='ident'>i</span> <span class='op'>*</span> <span class='number'>8</span> <span class='op'>+</span> <span class='number'>5</span>] <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span> <span class='number'>16</span>) <span class='op'>^</span>
+            ((<span class='ident'>buffer</span>[<span class='ident'>i</span> <span class='op'>*</span> <span class='number'>8</span> <span class='op'>+</span> <span class='number'>6</span>] <span class='kw'>as</span> <span class='ident'>u64</span>) <span class='op'>&lt;&lt;</span>  <span class='number'>8</span>) <span class='op'>^</span>
+            ((<span class='ident'>buffer</span>[<span class='ident'>i</span> <span class='op'>*</span> <span class='number'>8</span> <span class='op'>+</span> <span class='number'>7</span>] <span class='kw'>as</span> <span class='ident'>u64</span>)      );
+        <span class='ident'>k</span>[<span class='ident'>i</span>] <span class='op'>=</span> <span class='ident'>hash</span>[<span class='ident'>i</span>];
+        <span class='ident'>state</span>[<span class='ident'>i</span>] <span class='op'>=</span> <span class='ident'>block</span>[<span class='ident'>i</span>] <span class='op'>^</span> <span class='ident'>k</span>[<span class='ident'>i</span>];
+    }
+
+    <span class='kw'>for</span> <span class='ident'>r</span> <span class='kw'>in</span> <span class='number'>1</span>..(<span class='ident'>R</span> <span class='op'>+</span> <span class='number'>1</span>) <span class='comment'>/* [1, R] */</span> {
+        <span class='kw'>for</span> <span class='ident'>i</span> <span class='kw'>in</span> <span class='number'>0</span>..<span class='number'>8</span> {
+            <span class='ident'>l</span>[<span class='ident'>i</span>] <span class='op'>=</span>
+                <span class='ident'>C0</span>[((<span class='ident'>k</span>[(<span class='number'>0</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>56</span>)       ) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C1</span>[((<span class='ident'>k</span>[(<span class='number'>7</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>48</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C2</span>[((<span class='ident'>k</span>[(<span class='number'>6</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>40</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C3</span>[((<span class='ident'>k</span>[(<span class='number'>5</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>32</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C4</span>[((<span class='ident'>k</span>[(<span class='number'>4</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>24</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C5</span>[((<span class='ident'>k</span>[(<span class='number'>3</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>16</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C6</span>[((<span class='ident'>k</span>[(<span class='number'>2</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span>  <span class='number'>8</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C7</span>[((<span class='ident'>k</span>[(<span class='number'>1</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>]      ) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='kw'>if</span> <span class='ident'>i</span> <span class='op'>==</span> <span class='number'>0</span> { <span class='ident'>RC</span>[<span class='ident'>r</span>] } <span class='kw'>else</span> { <span class='number'>0</span> };
+        }
+        <span class='ident'>k</span> <span class='op'>=</span> <span class='ident'>l</span>;
+        <span class='kw'>for</span> <span class='ident'>i</span> <span class='kw'>in</span> <span class='number'>0</span>..<span class='number'>8</span> {
+            <span class='ident'>l</span>[<span class='ident'>i</span>] <span class='op'>=</span>
+                <span class='ident'>C0</span>[((<span class='ident'>state</span>[(<span class='number'>0</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>56</span>)       ) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C1</span>[((<span class='ident'>state</span>[(<span class='number'>7</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>48</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C2</span>[((<span class='ident'>state</span>[(<span class='number'>6</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>40</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C3</span>[((<span class='ident'>state</span>[(<span class='number'>5</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>32</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C4</span>[((<span class='ident'>state</span>[(<span class='number'>4</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>24</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C5</span>[((<span class='ident'>state</span>[(<span class='number'>3</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span> <span class='number'>16</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C6</span>[((<span class='ident'>state</span>[(<span class='number'>2</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>] <span class='op'>&gt;&gt;</span>  <span class='number'>8</span>) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>C7</span>[((<span class='ident'>state</span>[(<span class='number'>1</span> <span class='op'>+</span> <span class='ident'>i</span>) <span class='op'>%</span> <span class='number'>8</span>]      ) <span class='kw-2'>&amp;</span> <span class='number'>0xff</span>) <span class='kw'>as</span> <span class='ident'>usize</span>] <span class='op'>^</span>
+                <span class='ident'>k</span>[<span class='ident'>i</span>];
+        }
+        <span class='ident'>state</span> <span class='op'>=</span> <span class='ident'>l</span>;
+    }
+
+    <span class='kw'>for</span> <span class='ident'>i</span> <span class='kw'>in</span> <span class='number'>0</span>..<span class='number'>8</span> {
+        <span class='ident'>hash</span>[<span class='ident'>i</span>] <span class='op'>^=</span> <span class='ident'>state</span>[<span class='ident'>i</span>] <span class='op'>^</span> <span class='ident'>block</span>[<span class='ident'>i</span>];
+    }
+}
+
+<span class='attribute'>#[<span class='ident'>cfg</span>(<span class='ident'>test</span>)]</span>
+<span class='kw'>mod</span> <span class='ident'>test</span> {
+    <span class='kw'>use</span> <span class='ident'>super</span>::<span class='op'>*</span>;
+    <span class='kw'>use</span> <span class='ident'>digest</span>::<span class='ident'>Digest</span>;
+    <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>ascii</span>::<span class='ident'>AsciiExt</span>;
+
+    <span class='kw'>static</span> <span class='ident'>TESTS</span>: [(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span>, <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span>); <span class='number'>18</span>] <span class='op'>=</span> [
+        (<span class='string'>&quot;&quot;</span>, <span class='string'>&quot;19FA61D75522A4669B44E39C1D2E1726C530232130D407F89AFEE0964997F7A73E83BE698B288FEBCF88E3E03C4F0757EA8964E59B63D93708B138CC42A66EB3&quot;</span>),
+        (<span class='string'>&quot;\0&quot;</span>, <span class='string'>&quot;4D9444C212955963D425A410176FCCFB74161E6839692B4C11FDE2ED6EB559EFE0560C39A7B61D5A8BCABD6817A3135AF80F342A4942CCAAE745ABDDFB6AFED0&quot;</span>),
+        (<span class='string'>&quot;\0\0&quot;</span>, <span class='string'>&quot;8BDC9D4471D0DABD8812098B8CBDF5090BEDDB3D582917A61E176E3D22529D753FED9A37990CA18583855EFBC4F26E88F62002F67722EB05F74C7EA5E07013F5&quot;</span>),
+        (<span class='string'>&quot;\0\0\0&quot;</span>, <span class='string'>&quot;86AABFD4A83C3551CC0A63185616ACB41CDFA96118F1FFB28376B41067EFA25FB6C889662435BFC11A4F0936BE6BCC2C3E905C4686DB06159C40E4DD67DD983F&quot;</span>),
+        (<span class='string'>&quot;\0\0\0\0&quot;</span>, <span class='string'>&quot;4ED6B52E915F09A803677C3131F7B34655D32817505D89A8CC07ED073CA3FEDDDD4A57CC53696027E824AB9822630087657C6FC6A28836CF1F252ED204BCA576&quot;</span>),
+        (<span class='string'>&quot;\0\0\0\0\0&quot;</span>, <span class='string'>&quot;4A1D1D8380F38896B6FC5788C559F92727ACFD4DFA7081C72302B17E1ED437B30A24CFD75A16FD71B6BF5AA7AE5C7084594E3003A0B71584DC993681F902DF6F&quot;</span>),
+        (<span class='string'>&quot;\0\0\0\0\0\0&quot;</span>, <span class='string'>&quot;A2A379B0900A3C51809F4216AA3347FEC486D50EC7376553349C5CF2A767049A87BF1AC4642185144924259ECF6B5C3B48B55A20565DE289361E8AE5EAFC5802&quot;</span>),
+        (<span class='string'>&quot;\0\0\0\0\0\0\0&quot;</span>, <span class='string'>&quot;23EB3E26A1543558672F29E196304CD778EA459CC8E38D199DE0CC748BD32D58090FADB39E7C7B6954322DE990556D001BA457061C4367C6FA5D6961F1046E2F&quot;</span>),
+        (<span class='string'>&quot;\0\0\0\0\0\0\0\0&quot;</span>, <span class='string'>&quot;7207BE34FEE657189AF2748358F46C23175C1DCDD6741A9BDB139AEB255B618B711775FC258AC0FA53C350305862415EA121C65BF9E2FAE06CBD81355D928AD7&quot;</span>),
+        (<span class='string'>&quot;\0\0\0\0\0\0\0\0\0&quot;</span>, <span class='string'>&quot;FEF7D0BE035D1860E95644864B199C3A94EB23AB7920134B73239A320EB7CAE450092BC4BA8B9809E20C33937C37C52B52CA90241657FFD0816420C01F4FADA8&quot;</span>),
+        (<span class='string'>&quot;\0\0\0\0\0\0\0\0\0\0&quot;</span>, <span class='string'>&quot;CAAFB557AEF0FAE9F20BCCCDA7F3DC769C478A70508F4F2D180303598276934C410BD3D17627159A9C55B5265B516BA7F3EEF67FBB08D9F22E585BC45964C4D1&quot;</span>),
+        (<span class='string'>&quot;\0\0\0\0\0\0\0\0\0\0\0&quot;</span>, <span class='string'>&quot;8FE2B488CA099DB8E421768E1E7E0193FFAA3000E8281403795575FE7D03BD87298C4F64B1C4311093E43DE4D80049645782EE268C3653C7A5C13DA3773D5564&quot;</span>),
+        (<span class='string'>&quot;a&quot;</span>, <span class='string'>&quot;8ACA2602792AEC6F11A67206531FB7D7F0DFF59413145E6973C45001D0087B42D11BC645413AEFF63A42391A39145A591A92200D560195E53B478584FDAE231A&quot;</span>),
+        (<span class='string'>&quot;abc&quot;</span>, <span class='string'>&quot;4E2448A4C6F486BB16B6562C73B4020BF3043E3A731BCE721AE1B303D97E6D4C7181EEBDB6C57E277D0E34957114CBD6C797FC9D95D8B582D225292076D4EEF5&quot;</span>),
+        (<span class='string'>&quot;message digest&quot;</span>, <span class='string'>&quot;378C84A4126E2DC6E56DCC7458377AAC838D00032230F53CE1F5700C0FFB4D3B8421557659EF55C106B4B52AC5A4AAA692ED920052838F3362E86DBD37A8903E&quot;</span>),
+        (<span class='string'>&quot;abcdefghijklmnopqrstuvwxyz&quot;</span>, <span class='string'>&quot;F1D754662636FFE92C82EBB9212A484A8D38631EAD4238F5442EE13B8054E41B08BF2A9251C30B6A0B8AAE86177AB4A6F68F673E7207865D5D9819A3DBA4EB3B&quot;</span>),
+        (<span class='string'>&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789&quot;</span>, <span class='string'>&quot;DC37E008CF9EE69BF11F00ED9ABA26901DD7C28CDEC066CC6AF42E40F82F3A1E08EBA26629129D8FB7CB57211B9281A65517CC879D7B962142C65F5A7AF01467&quot;</span>),
+        (<span class='string'>&quot;012345678901234567890123456789012345678901234567890123456789012&quot;</span>, <span class='string'>&quot;6B315FB4EB6A7DDEF9EA173BAAB307ED257F21B7D86DCB85EE03A7CF417A872627DBCCF67E3D018D4D8F61668B416875C5EE21CAF7E158E4B1ECA73D60048701&quot;</span>),
+    ];
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>whirlpool_static_test</span>() {
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>d</span> <span class='op'>=</span> <span class='ident'>Whirlpool</span>::<span class='ident'>new</span>();
+        <span class='kw'>for</span> <span class='ident'>tuple</span> <span class='kw'>in</span> <span class='ident'>TESTS</span>.<span class='ident'>iter</span>() {
+            <span class='kw'>let</span> (<span class='ident'>s</span>, <span class='ident'>hash</span>) <span class='op'>=</span> <span class='op'>*</span><span class='ident'>tuple</span>;
+            <span class='ident'>d</span>.<span class='ident'>input_str</span>(<span class='ident'>s</span>);
+            <span class='kw'>let</span> <span class='ident'>result</span> <span class='op'>=</span> <span class='ident'>d</span>.<span class='ident'>result_str</span>().<span class='ident'>to_ascii_lowercase</span>();
+            <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>s</span>);
+            <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>result</span> <span class='op'>==</span> <span class='ident'>hash</span>.<span class='ident'>to_ascii_lowercase</span>());
+            <span class='ident'>d</span>.<span class='ident'>reset</span>();
+        }
+    }
+
+    <span class='attribute'>#[<span class='ident'>test</span>]</span>
+    <span class='kw'>fn</span> <span class='ident'>whirlpool_1000000a_test</span>() {
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>d</span> <span class='op'>=</span> <span class='ident'>Whirlpool</span>::<span class='ident'>new</span>();
+        <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>s</span> <span class='op'>=</span> <span class='ident'>String</span>::<span class='ident'>new</span>();
+        <span class='kw'>for</span> _ <span class='kw'>in</span> <span class='number'>0</span>..<span class='number'>50000</span> {
+            <span class='ident'>s</span>.<span class='ident'>push_str</span>(<span class='string'>&quot;aaaaaaaaaa&quot;</span>);
+            <span class='ident'>d</span>.<span class='ident'>input_str</span>(<span class='string'>&quot;aaaaaaaaaa&quot;</span>);
+        }
+        <span class='ident'>d</span>.<span class='ident'>input_str</span>(<span class='ident'>s</span>.<span class='ident'>as_ref</span>());
+
+        <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>d</span>.<span class='ident'>result_str</span>().<span class='ident'>to_ascii_uppercase</span>());
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>s</span>.<span class='ident'>len</span>() <span class='op'>==</span> <span class='number'>500000</span>);
+        <span class='macro'>assert</span><span class='macro'>!</span>(<span class='ident'>d</span>.<span class='ident'>result_str</span>().<span class='ident'>to_ascii_uppercase</span>() <span class='op'>==</span> <span class='string'>&quot;0C99005BEB57EFF50A7CF005560DDF5D29057FD86B20BFD62DECA0F1CCEA4AF51FC15490EDDC47AF32BB2B66C34FF9AD8C6008AD677F77126953B226E4ED8B01&quot;</span>);
+    }
+}
+
+<span class='kw'>static</span> <span class='ident'>R</span>: <span class='ident'>usize</span> <span class='op'>=</span> <span class='number'>10</span>;
+
+<span class='kw'>static</span> <span class='ident'>RC</span>: [<span class='ident'>u64</span>; <span class='number'>11</span> <span class='comment'>/* R + 1 */</span>] <span class='op'>=</span> [
+    <span class='number'>0x0000000000000000</span>,
+    <span class='number'>0x1823c6e887b8014f</span>,
+    <span class='number'>0x36a6d2f5796f9152</span>,
+    <span class='number'>0x60bc9b8ea30c7b35</span>,
+    <span class='number'>0x1de0d7c22e4bfe57</span>,
+    <span class='number'>0x157737e59ff04ada</span>,
+    <span class='number'>0x58c9290ab1a06b85</span>,
+    <span class='number'>0xbd5d10f4cb3e0567</span>,
+    <span class='number'>0xe427418ba77d95d8</span>,
+    <span class='number'>0xfbee7c66dd17479e</span>,
+    <span class='number'>0xca2dbf07ad5a8333</span>,
+];
+
+<span class='kw'>static</span> <span class='ident'>C0</span>: [<span class='ident'>u64</span>; <span class='number'>256</span>] <span class='op'>=</span> [
+    <span class='number'>0x18186018c07830d8</span>, <span class='number'>0x23238c2305af4626</span>, <span class='number'>0xc6c63fc67ef991b8</span>, <span class='number'>0xe8e887e8136fcdfb</span>,
+    <span class='number'>0x878726874ca113cb</span>, <span class='number'>0xb8b8dab8a9626d11</span>, <span class='number'>0x0101040108050209</span>, <span class='number'>0x4f4f214f426e9e0d</span>,
+    <span class='number'>0x3636d836adee6c9b</span>, <span class='number'>0xa6a6a2a6590451ff</span>, <span class='number'>0xd2d26fd2debdb90c</span>, <span class='number'>0xf5f5f3f5fb06f70e</span>,
+    <span class='number'>0x7979f979ef80f296</span>, <span class='number'>0x6f6fa16f5fcede30</span>, <span class='number'>0x91917e91fcef3f6d</span>, <span class='number'>0x52525552aa07a4f8</span>,
+    <span class='number'>0x60609d6027fdc047</span>, <span class='number'>0xbcbccabc89766535</span>, <span class='number'>0x9b9b569baccd2b37</span>, <span class='number'>0x8e8e028e048c018a</span>,
+    <span class='number'>0xa3a3b6a371155bd2</span>, <span class='number'>0x0c0c300c603c186c</span>, <span class='number'>0x7b7bf17bff8af684</span>, <span class='number'>0x3535d435b5e16a80</span>,
+    <span class='number'>0x1d1d741de8693af5</span>, <span class='number'>0xe0e0a7e05347ddb3</span>, <span class='number'>0xd7d77bd7f6acb321</span>, <span class='number'>0xc2c22fc25eed999c</span>,
+    <span class='number'>0x2e2eb82e6d965c43</span>, <span class='number'>0x4b4b314b627a9629</span>, <span class='number'>0xfefedffea321e15d</span>, <span class='number'>0x575741578216aed5</span>,
+    <span class='number'>0x15155415a8412abd</span>, <span class='number'>0x7777c1779fb6eee8</span>, <span class='number'>0x3737dc37a5eb6e92</span>, <span class='number'>0xe5e5b3e57b56d79e</span>,
+    <span class='number'>0x9f9f469f8cd92313</span>, <span class='number'>0xf0f0e7f0d317fd23</span>, <span class='number'>0x4a4a354a6a7f9420</span>, <span class='number'>0xdada4fda9e95a944</span>,
+    <span class='number'>0x58587d58fa25b0a2</span>, <span class='number'>0xc9c903c906ca8fcf</span>, <span class='number'>0x2929a429558d527c</span>, <span class='number'>0x0a0a280a5022145a</span>,
+    <span class='number'>0xb1b1feb1e14f7f50</span>, <span class='number'>0xa0a0baa0691a5dc9</span>, <span class='number'>0x6b6bb16b7fdad614</span>, <span class='number'>0x85852e855cab17d9</span>,
+    <span class='number'>0xbdbdcebd8173673c</span>, <span class='number'>0x5d5d695dd234ba8f</span>, <span class='number'>0x1010401080502090</span>, <span class='number'>0xf4f4f7f4f303f507</span>,
+    <span class='number'>0xcbcb0bcb16c08bdd</span>, <span class='number'>0x3e3ef83eedc67cd3</span>, <span class='number'>0x0505140528110a2d</span>, <span class='number'>0x676781671fe6ce78</span>,
+    <span class='number'>0xe4e4b7e47353d597</span>, <span class='number'>0x27279c2725bb4e02</span>, <span class='number'>0x4141194132588273</span>, <span class='number'>0x8b8b168b2c9d0ba7</span>,
+    <span class='number'>0xa7a7a6a7510153f6</span>, <span class='number'>0x7d7de97dcf94fab2</span>, <span class='number'>0x95956e95dcfb3749</span>, <span class='number'>0xd8d847d88e9fad56</span>,
+    <span class='number'>0xfbfbcbfb8b30eb70</span>, <span class='number'>0xeeee9fee2371c1cd</span>, <span class='number'>0x7c7ced7cc791f8bb</span>, <span class='number'>0x6666856617e3cc71</span>,
+    <span class='number'>0xdddd53dda68ea77b</span>, <span class='number'>0x17175c17b84b2eaf</span>, <span class='number'>0x4747014702468e45</span>, <span class='number'>0x9e9e429e84dc211a</span>,
+    <span class='number'>0xcaca0fca1ec589d4</span>, <span class='number'>0x2d2db42d75995a58</span>, <span class='number'>0xbfbfc6bf9179632e</span>, <span class='number'>0x07071c07381b0e3f</span>,
+    <span class='number'>0xadad8ead012347ac</span>, <span class='number'>0x5a5a755aea2fb4b0</span>, <span class='number'>0x838336836cb51bef</span>, <span class='number'>0x3333cc3385ff66b6</span>,
+    <span class='number'>0x636391633ff2c65c</span>, <span class='number'>0x02020802100a0412</span>, <span class='number'>0xaaaa92aa39384993</span>, <span class='number'>0x7171d971afa8e2de</span>,
+    <span class='number'>0xc8c807c80ecf8dc6</span>, <span class='number'>0x19196419c87d32d1</span>, <span class='number'>0x494939497270923b</span>, <span class='number'>0xd9d943d9869aaf5f</span>,
+    <span class='number'>0xf2f2eff2c31df931</span>, <span class='number'>0xe3e3abe34b48dba8</span>, <span class='number'>0x5b5b715be22ab6b9</span>, <span class='number'>0x88881a8834920dbc</span>,
+    <span class='number'>0x9a9a529aa4c8293e</span>, <span class='number'>0x262698262dbe4c0b</span>, <span class='number'>0x3232c8328dfa64bf</span>, <span class='number'>0xb0b0fab0e94a7d59</span>,
+    <span class='number'>0xe9e983e91b6acff2</span>, <span class='number'>0x0f0f3c0f78331e77</span>, <span class='number'>0xd5d573d5e6a6b733</span>, <span class='number'>0x80803a8074ba1df4</span>,
+    <span class='number'>0xbebec2be997c6127</span>, <span class='number'>0xcdcd13cd26de87eb</span>, <span class='number'>0x3434d034bde46889</span>, <span class='number'>0x48483d487a759032</span>,
+    <span class='number'>0xffffdbffab24e354</span>, <span class='number'>0x7a7af57af78ff48d</span>, <span class='number'>0x90907a90f4ea3d64</span>, <span class='number'>0x5f5f615fc23ebe9d</span>,
+    <span class='number'>0x202080201da0403d</span>, <span class='number'>0x6868bd6867d5d00f</span>, <span class='number'>0x1a1a681ad07234ca</span>, <span class='number'>0xaeae82ae192c41b7</span>,
+    <span class='number'>0xb4b4eab4c95e757d</span>, <span class='number'>0x54544d549a19a8ce</span>, <span class='number'>0x93937693ece53b7f</span>, <span class='number'>0x222288220daa442f</span>,
+    <span class='number'>0x64648d6407e9c863</span>, <span class='number'>0xf1f1e3f1db12ff2a</span>, <span class='number'>0x7373d173bfa2e6cc</span>, <span class='number'>0x12124812905a2482</span>,
+    <span class='number'>0x40401d403a5d807a</span>, <span class='number'>0x0808200840281048</span>, <span class='number'>0xc3c32bc356e89b95</span>, <span class='number'>0xecec97ec337bc5df</span>,
+    <span class='number'>0xdbdb4bdb9690ab4d</span>, <span class='number'>0xa1a1bea1611f5fc0</span>, <span class='number'>0x8d8d0e8d1c830791</span>, <span class='number'>0x3d3df43df5c97ac8</span>,
+    <span class='number'>0x97976697ccf1335b</span>, <span class='number'>0x0000000000000000</span>, <span class='number'>0xcfcf1bcf36d483f9</span>, <span class='number'>0x2b2bac2b4587566e</span>,
+    <span class='number'>0x7676c57697b3ece1</span>, <span class='number'>0x8282328264b019e6</span>, <span class='number'>0xd6d67fd6fea9b128</span>, <span class='number'>0x1b1b6c1bd87736c3</span>,
+    <span class='number'>0xb5b5eeb5c15b7774</span>, <span class='number'>0xafaf86af112943be</span>, <span class='number'>0x6a6ab56a77dfd41d</span>, <span class='number'>0x50505d50ba0da0ea</span>,
+    <span class='number'>0x45450945124c8a57</span>, <span class='number'>0xf3f3ebf3cb18fb38</span>, <span class='number'>0x3030c0309df060ad</span>, <span class='number'>0xefef9bef2b74c3c4</span>,
+    <span class='number'>0x3f3ffc3fe5c37eda</span>, <span class='number'>0x55554955921caac7</span>, <span class='number'>0xa2a2b2a2791059db</span>, <span class='number'>0xeaea8fea0365c9e9</span>,
+    <span class='number'>0x656589650fecca6a</span>, <span class='number'>0xbabad2bab9686903</span>, <span class='number'>0x2f2fbc2f65935e4a</span>, <span class='number'>0xc0c027c04ee79d8e</span>,
+    <span class='number'>0xdede5fdebe81a160</span>, <span class='number'>0x1c1c701ce06c38fc</span>, <span class='number'>0xfdfdd3fdbb2ee746</span>, <span class='number'>0x4d4d294d52649a1f</span>,
+    <span class='number'>0x92927292e4e03976</span>, <span class='number'>0x7575c9758fbceafa</span>, <span class='number'>0x06061806301e0c36</span>, <span class='number'>0x8a8a128a249809ae</span>,
+    <span class='number'>0xb2b2f2b2f940794b</span>, <span class='number'>0xe6e6bfe66359d185</span>, <span class='number'>0x0e0e380e70361c7e</span>, <span class='number'>0x1f1f7c1ff8633ee7</span>,
+    <span class='number'>0x6262956237f7c455</span>, <span class='number'>0xd4d477d4eea3b53a</span>, <span class='number'>0xa8a89aa829324d81</span>, <span class='number'>0x96966296c4f43152</span>,
+    <span class='number'>0xf9f9c3f99b3aef62</span>, <span class='number'>0xc5c533c566f697a3</span>, <span class='number'>0x2525942535b14a10</span>, <span class='number'>0x59597959f220b2ab</span>,
+    <span class='number'>0x84842a8454ae15d0</span>, <span class='number'>0x7272d572b7a7e4c5</span>, <span class='number'>0x3939e439d5dd72ec</span>, <span class='number'>0x4c4c2d4c5a619816</span>,
+    <span class='number'>0x5e5e655eca3bbc94</span>, <span class='number'>0x7878fd78e785f09f</span>, <span class='number'>0x3838e038ddd870e5</span>, <span class='number'>0x8c8c0a8c14860598</span>,
+    <span class='number'>0xd1d163d1c6b2bf17</span>, <span class='number'>0xa5a5aea5410b57e4</span>, <span class='number'>0xe2e2afe2434dd9a1</span>, <span class='number'>0x616199612ff8c24e</span>,
+    <span class='number'>0xb3b3f6b3f1457b42</span>, <span class='number'>0x2121842115a54234</span>, <span class='number'>0x9c9c4a9c94d62508</span>, <span class='number'>0x1e1e781ef0663cee</span>,
+    <span class='number'>0x4343114322528661</span>, <span class='number'>0xc7c73bc776fc93b1</span>, <span class='number'>0xfcfcd7fcb32be54f</span>, <span class='number'>0x0404100420140824</span>,
+    <span class='number'>0x51515951b208a2e3</span>, <span class='number'>0x99995e99bcc72f25</span>, <span class='number'>0x6d6da96d4fc4da22</span>, <span class='number'>0x0d0d340d68391a65</span>,
+    <span class='number'>0xfafacffa8335e979</span>, <span class='number'>0xdfdf5bdfb684a369</span>, <span class='number'>0x7e7ee57ed79bfca9</span>, <span class='number'>0x242490243db44819</span>,
+    <span class='number'>0x3b3bec3bc5d776fe</span>, <span class='number'>0xabab96ab313d4b9a</span>, <span class='number'>0xcece1fce3ed181f0</span>, <span class='number'>0x1111441188552299</span>,
+    <span class='number'>0x8f8f068f0c890383</span>, <span class='number'>0x4e4e254e4a6b9c04</span>, <span class='number'>0xb7b7e6b7d1517366</span>, <span class='number'>0xebeb8beb0b60cbe0</span>,
+    <span class='number'>0x3c3cf03cfdcc78c1</span>, <span class='number'>0x81813e817cbf1ffd</span>, <span class='number'>0x94946a94d4fe3540</span>, <span class='number'>0xf7f7fbf7eb0cf31c</span>,
+    <span class='number'>0xb9b9deb9a1676f18</span>, <span class='number'>0x13134c13985f268b</span>, <span class='number'>0x2c2cb02c7d9c5851</span>, <span class='number'>0xd3d36bd3d6b8bb05</span>,
+    <span class='number'>0xe7e7bbe76b5cd38c</span>, <span class='number'>0x6e6ea56e57cbdc39</span>, <span class='number'>0xc4c437c46ef395aa</span>, <span class='number'>0x03030c03180f061b</span>,
+    <span class='number'>0x565645568a13acdc</span>, <span class='number'>0x44440d441a49885e</span>, <span class='number'>0x7f7fe17fdf9efea0</span>, <span class='number'>0xa9a99ea921374f88</span>,
+    <span class='number'>0x2a2aa82a4d825467</span>, <span class='number'>0xbbbbd6bbb16d6b0a</span>, <span class='number'>0xc1c123c146e29f87</span>, <span class='number'>0x53535153a202a6f1</span>,
+    <span class='number'>0xdcdc57dcae8ba572</span>, <span class='number'>0x0b0b2c0b58271653</span>, <span class='number'>0x9d9d4e9d9cd32701</span>, <span class='number'>0x6c6cad6c47c1d82b</span>,
+    <span class='number'>0x3131c43195f562a4</span>, <span class='number'>0x7474cd7487b9e8f3</span>, <span class='number'>0xf6f6fff6e309f115</span>, <span class='number'>0x464605460a438c4c</span>,
+    <span class='number'>0xacac8aac092645a5</span>, <span class='number'>0x89891e893c970fb5</span>, <span class='number'>0x14145014a04428b4</span>, <span class='number'>0xe1e1a3e15b42dfba</span>,
+    <span class='number'>0x16165816b04e2ca6</span>, <span class='number'>0x3a3ae83acdd274f7</span>, <span class='number'>0x6969b9696fd0d206</span>, <span class='number'>0x09092409482d1241</span>,
+    <span class='number'>0x7070dd70a7ade0d7</span>, <span class='number'>0xb6b6e2b6d954716f</span>, <span class='number'>0xd0d067d0ceb7bd1e</span>, <span class='number'>0xeded93ed3b7ec7d6</span>,
+    <span class='number'>0xcccc17cc2edb85e2</span>, <span class='number'>0x424215422a578468</span>, <span class='number'>0x98985a98b4c22d2c</span>, <span class='number'>0xa4a4aaa4490e55ed</span>,
+    <span class='number'>0x2828a0285d885075</span>, <span class='number'>0x5c5c6d5cda31b886</span>, <span class='number'>0xf8f8c7f8933fed6b</span>, <span class='number'>0x8686228644a411c2</span>,
+];
+
+<span class='kw'>static</span> <span class='ident'>C1</span>: [<span class='ident'>u64</span>; <span class='number'>256</span>] <span class='op'>=</span> [
+    <span class='number'>0xd818186018c07830</span>, <span class='number'>0x2623238c2305af46</span>, <span class='number'>0xb8c6c63fc67ef991</span>, <span class='number'>0xfbe8e887e8136fcd</span>,
+    <span class='number'>0xcb878726874ca113</span>, <span class='number'>0x11b8b8dab8a9626d</span>, <span class='number'>0x0901010401080502</span>, <span class='number'>0x0d4f4f214f426e9e</span>,
+    <span class='number'>0x9b3636d836adee6c</span>, <span class='number'>0xffa6a6a2a6590451</span>, <span class='number'>0x0cd2d26fd2debdb9</span>, <span class='number'>0x0ef5f5f3f5fb06f7</span>,
+    <span class='number'>0x967979f979ef80f2</span>, <span class='number'>0x306f6fa16f5fcede</span>, <span class='number'>0x6d91917e91fcef3f</span>, <span class='number'>0xf852525552aa07a4</span>,
+    <span class='number'>0x4760609d6027fdc0</span>, <span class='number'>0x35bcbccabc897665</span>, <span class='number'>0x379b9b569baccd2b</span>, <span class='number'>0x8a8e8e028e048c01</span>,
+    <span class='number'>0xd2a3a3b6a371155b</span>, <span class='number'>0x6c0c0c300c603c18</span>, <span class='number'>0x847b7bf17bff8af6</span>, <span class='number'>0x803535d435b5e16a</span>,
+    <span class='number'>0xf51d1d741de8693a</span>, <span class='number'>0xb3e0e0a7e05347dd</span>, <span class='number'>0x21d7d77bd7f6acb3</span>, <span class='number'>0x9cc2c22fc25eed99</span>,
+    <span class='number'>0x432e2eb82e6d965c</span>, <span class='number'>0x294b4b314b627a96</span>, <span class='number'>0x5dfefedffea321e1</span>, <span class='number'>0xd5575741578216ae</span>,
+    <span class='number'>0xbd15155415a8412a</span>, <span class='number'>0xe87777c1779fb6ee</span>, <span class='number'>0x923737dc37a5eb6e</span>, <span class='number'>0x9ee5e5b3e57b56d7</span>,
+    <span class='number'>0x139f9f469f8cd923</span>, <span class='number'>0x23f0f0e7f0d317fd</span>, <span class='number'>0x204a4a354a6a7f94</span>, <span class='number'>0x44dada4fda9e95a9</span>,
+    <span class='number'>0xa258587d58fa25b0</span>, <span class='number'>0xcfc9c903c906ca8f</span>, <span class='number'>0x7c2929a429558d52</span>, <span class='number'>0x5a0a0a280a502214</span>,
+    <span class='number'>0x50b1b1feb1e14f7f</span>, <span class='number'>0xc9a0a0baa0691a5d</span>, <span class='number'>0x146b6bb16b7fdad6</span>, <span class='number'>0xd985852e855cab17</span>,
+    <span class='number'>0x3cbdbdcebd817367</span>, <span class='number'>0x8f5d5d695dd234ba</span>, <span class='number'>0x9010104010805020</span>, <span class='number'>0x07f4f4f7f4f303f5</span>,
+    <span class='number'>0xddcbcb0bcb16c08b</span>, <span class='number'>0xd33e3ef83eedc67c</span>, <span class='number'>0x2d0505140528110a</span>, <span class='number'>0x78676781671fe6ce</span>,
+    <span class='number'>0x97e4e4b7e47353d5</span>, <span class='number'>0x0227279c2725bb4e</span>, <span class='number'>0x7341411941325882</span>, <span class='number'>0xa78b8b168b2c9d0b</span>,
+    <span class='number'>0xf6a7a7a6a7510153</span>, <span class='number'>0xb27d7de97dcf94fa</span>, <span class='number'>0x4995956e95dcfb37</span>, <span class='number'>0x56d8d847d88e9fad</span>,
+    <span class='number'>0x70fbfbcbfb8b30eb</span>, <span class='number'>0xcdeeee9fee2371c1</span>, <span class='number'>0xbb7c7ced7cc791f8</span>, <span class='number'>0x716666856617e3cc</span>,
+    <span class='number'>0x7bdddd53dda68ea7</span>, <span class='number'>0xaf17175c17b84b2e</span>, <span class='number'>0x454747014702468e</span>, <span class='number'>0x1a9e9e429e84dc21</span>,
+    <span class='number'>0xd4caca0fca1ec589</span>, <span class='number'>0x582d2db42d75995a</span>, <span class='number'>0x2ebfbfc6bf917963</span>, <span class='number'>0x3f07071c07381b0e</span>,
+    <span class='number'>0xacadad8ead012347</span>, <span class='number'>0xb05a5a755aea2fb4</span>, <span class='number'>0xef838336836cb51b</span>, <span class='number'>0xb63333cc3385ff66</span>,
+    <span class='number'>0x5c636391633ff2c6</span>, <span class='number'>0x1202020802100a04</span>, <span class='number'>0x93aaaa92aa393849</span>, <span class='number'>0xde7171d971afa8e2</span>,
+    <span class='number'>0xc6c8c807c80ecf8d</span>, <span class='number'>0xd119196419c87d32</span>, <span class='number'>0x3b49493949727092</span>, <span class='number'>0x5fd9d943d9869aaf</span>,
+    <span class='number'>0x31f2f2eff2c31df9</span>, <span class='number'>0xa8e3e3abe34b48db</span>, <span class='number'>0xb95b5b715be22ab6</span>, <span class='number'>0xbc88881a8834920d</span>,
+    <span class='number'>0x3e9a9a529aa4c829</span>, <span class='number'>0x0b262698262dbe4c</span>, <span class='number'>0xbf3232c8328dfa64</span>, <span class='number'>0x59b0b0fab0e94a7d</span>,
+    <span class='number'>0xf2e9e983e91b6acf</span>, <span class='number'>0x770f0f3c0f78331e</span>, <span class='number'>0x33d5d573d5e6a6b7</span>, <span class='number'>0xf480803a8074ba1d</span>,
+    <span class='number'>0x27bebec2be997c61</span>, <span class='number'>0xebcdcd13cd26de87</span>, <span class='number'>0x893434d034bde468</span>, <span class='number'>0x3248483d487a7590</span>,
+    <span class='number'>0x54ffffdbffab24e3</span>, <span class='number'>0x8d7a7af57af78ff4</span>, <span class='number'>0x6490907a90f4ea3d</span>, <span class='number'>0x9d5f5f615fc23ebe</span>,
+    <span class='number'>0x3d202080201da040</span>, <span class='number'>0x0f6868bd6867d5d0</span>, <span class='number'>0xca1a1a681ad07234</span>, <span class='number'>0xb7aeae82ae192c41</span>,
+    <span class='number'>0x7db4b4eab4c95e75</span>, <span class='number'>0xce54544d549a19a8</span>, <span class='number'>0x7f93937693ece53b</span>, <span class='number'>0x2f222288220daa44</span>,
+    <span class='number'>0x6364648d6407e9c8</span>, <span class='number'>0x2af1f1e3f1db12ff</span>, <span class='number'>0xcc7373d173bfa2e6</span>, <span class='number'>0x8212124812905a24</span>,
+    <span class='number'>0x7a40401d403a5d80</span>, <span class='number'>0x4808082008402810</span>, <span class='number'>0x95c3c32bc356e89b</span>, <span class='number'>0xdfecec97ec337bc5</span>,
+    <span class='number'>0x4ddbdb4bdb9690ab</span>, <span class='number'>0xc0a1a1bea1611f5f</span>, <span class='number'>0x918d8d0e8d1c8307</span>, <span class='number'>0xc83d3df43df5c97a</span>,
+    <span class='number'>0x5b97976697ccf133</span>, <span class='number'>0x0000000000000000</span>, <span class='number'>0xf9cfcf1bcf36d483</span>, <span class='number'>0x6e2b2bac2b458756</span>,
+    <span class='number'>0xe17676c57697b3ec</span>, <span class='number'>0xe68282328264b019</span>, <span class='number'>0x28d6d67fd6fea9b1</span>, <span class='number'>0xc31b1b6c1bd87736</span>,
+    <span class='number'>0x74b5b5eeb5c15b77</span>, <span class='number'>0xbeafaf86af112943</span>, <span class='number'>0x1d6a6ab56a77dfd4</span>, <span class='number'>0xea50505d50ba0da0</span>,
+    <span class='number'>0x5745450945124c8a</span>, <span class='number'>0x38f3f3ebf3cb18fb</span>, <span class='number'>0xad3030c0309df060</span>, <span class='number'>0xc4efef9bef2b74c3</span>,
+    <span class='number'>0xda3f3ffc3fe5c37e</span>, <span class='number'>0xc755554955921caa</span>, <span class='number'>0xdba2a2b2a2791059</span>, <span class='number'>0xe9eaea8fea0365c9</span>,
+    <span class='number'>0x6a656589650fecca</span>, <span class='number'>0x03babad2bab96869</span>, <span class='number'>0x4a2f2fbc2f65935e</span>, <span class='number'>0x8ec0c027c04ee79d</span>,
+    <span class='number'>0x60dede5fdebe81a1</span>, <span class='number'>0xfc1c1c701ce06c38</span>, <span class='number'>0x46fdfdd3fdbb2ee7</span>, <span class='number'>0x1f4d4d294d52649a</span>,
+    <span class='number'>0x7692927292e4e039</span>, <span class='number'>0xfa7575c9758fbcea</span>, <span class='number'>0x3606061806301e0c</span>, <span class='number'>0xae8a8a128a249809</span>,
+    <span class='number'>0x4bb2b2f2b2f94079</span>, <span class='number'>0x85e6e6bfe66359d1</span>, <span class='number'>0x7e0e0e380e70361c</span>, <span class='number'>0xe71f1f7c1ff8633e</span>,
+    <span class='number'>0x556262956237f7c4</span>, <span class='number'>0x3ad4d477d4eea3b5</span>, <span class='number'>0x81a8a89aa829324d</span>, <span class='number'>0x5296966296c4f431</span>,
+    <span class='number'>0x62f9f9c3f99b3aef</span>, <span class='number'>0xa3c5c533c566f697</span>, <span class='number'>0x102525942535b14a</span>, <span class='number'>0xab59597959f220b2</span>,
+    <span class='number'>0xd084842a8454ae15</span>, <span class='number'>0xc57272d572b7a7e4</span>, <span class='number'>0xec3939e439d5dd72</span>, <span class='number'>0x164c4c2d4c5a6198</span>,
+    <span class='number'>0x945e5e655eca3bbc</span>, <span class='number'>0x9f7878fd78e785f0</span>, <span class='number'>0xe53838e038ddd870</span>, <span class='number'>0x988c8c0a8c148605</span>,
+    <span class='number'>0x17d1d163d1c6b2bf</span>, <span class='number'>0xe4a5a5aea5410b57</span>, <span class='number'>0xa1e2e2afe2434dd9</span>, <span class='number'>0x4e616199612ff8c2</span>,
+    <span class='number'>0x42b3b3f6b3f1457b</span>, <span class='number'>0x342121842115a542</span>, <span class='number'>0x089c9c4a9c94d625</span>, <span class='number'>0xee1e1e781ef0663c</span>,
+    <span class='number'>0x6143431143225286</span>, <span class='number'>0xb1c7c73bc776fc93</span>, <span class='number'>0x4ffcfcd7fcb32be5</span>, <span class='number'>0x2404041004201408</span>,
+    <span class='number'>0xe351515951b208a2</span>, <span class='number'>0x2599995e99bcc72f</span>, <span class='number'>0x226d6da96d4fc4da</span>, <span class='number'>0x650d0d340d68391a</span>,
+    <span class='number'>0x79fafacffa8335e9</span>, <span class='number'>0x69dfdf5bdfb684a3</span>, <span class='number'>0xa97e7ee57ed79bfc</span>, <span class='number'>0x19242490243db448</span>,
+    <span class='number'>0xfe3b3bec3bc5d776</span>, <span class='number'>0x9aabab96ab313d4b</span>, <span class='number'>0xf0cece1fce3ed181</span>, <span class='number'>0x9911114411885522</span>,
+    <span class='number'>0x838f8f068f0c8903</span>, <span class='number'>0x044e4e254e4a6b9c</span>, <span class='number'>0x66b7b7e6b7d15173</span>, <span class='number'>0xe0ebeb8beb0b60cb</span>,
+    <span class='number'>0xc13c3cf03cfdcc78</span>, <span class='number'>0xfd81813e817cbf1f</span>, <span class='number'>0x4094946a94d4fe35</span>, <span class='number'>0x1cf7f7fbf7eb0cf3</span>,
+    <span class='number'>0x18b9b9deb9a1676f</span>, <span class='number'>0x8b13134c13985f26</span>, <span class='number'>0x512c2cb02c7d9c58</span>, <span class='number'>0x05d3d36bd3d6b8bb</span>,
+    <span class='number'>0x8ce7e7bbe76b5cd3</span>, <span class='number'>0x396e6ea56e57cbdc</span>, <span class='number'>0xaac4c437c46ef395</span>, <span class='number'>0x1b03030c03180f06</span>,
+    <span class='number'>0xdc565645568a13ac</span>, <span class='number'>0x5e44440d441a4988</span>, <span class='number'>0xa07f7fe17fdf9efe</span>, <span class='number'>0x88a9a99ea921374f</span>,
+    <span class='number'>0x672a2aa82a4d8254</span>, <span class='number'>0x0abbbbd6bbb16d6b</span>, <span class='number'>0x87c1c123c146e29f</span>, <span class='number'>0xf153535153a202a6</span>,
+    <span class='number'>0x72dcdc57dcae8ba5</span>, <span class='number'>0x530b0b2c0b582716</span>, <span class='number'>0x019d9d4e9d9cd327</span>, <span class='number'>0x2b6c6cad6c47c1d8</span>,
+    <span class='number'>0xa43131c43195f562</span>, <span class='number'>0xf37474cd7487b9e8</span>, <span class='number'>0x15f6f6fff6e309f1</span>, <span class='number'>0x4c464605460a438c</span>,
+    <span class='number'>0xa5acac8aac092645</span>, <span class='number'>0xb589891e893c970f</span>, <span class='number'>0xb414145014a04428</span>, <span class='number'>0xbae1e1a3e15b42df</span>,
+    <span class='number'>0xa616165816b04e2c</span>, <span class='number'>0xf73a3ae83acdd274</span>, <span class='number'>0x066969b9696fd0d2</span>, <span class='number'>0x4109092409482d12</span>,
+    <span class='number'>0xd77070dd70a7ade0</span>, <span class='number'>0x6fb6b6e2b6d95471</span>, <span class='number'>0x1ed0d067d0ceb7bd</span>, <span class='number'>0xd6eded93ed3b7ec7</span>,
+    <span class='number'>0xe2cccc17cc2edb85</span>, <span class='number'>0x68424215422a5784</span>, <span class='number'>0x2c98985a98b4c22d</span>, <span class='number'>0xeda4a4aaa4490e55</span>,
+    <span class='number'>0x752828a0285d8850</span>, <span class='number'>0x865c5c6d5cda31b8</span>, <span class='number'>0x6bf8f8c7f8933fed</span>, <span class='number'>0xc28686228644a411</span>,
+];
+
+<span class='kw'>static</span> <span class='ident'>C2</span>: [<span class='ident'>u64</span>; <span class='number'>256</span>] <span class='op'>=</span> [
+    <span class='number'>0x30d818186018c078</span>, <span class='number'>0x462623238c2305af</span>, <span class='number'>0x91b8c6c63fc67ef9</span>, <span class='number'>0xcdfbe8e887e8136f</span>,
+    <span class='number'>0x13cb878726874ca1</span>, <span class='number'>0x6d11b8b8dab8a962</span>, <span class='number'>0x0209010104010805</span>, <span class='number'>0x9e0d4f4f214f426e</span>,
+    <span class='number'>0x6c9b3636d836adee</span>, <span class='number'>0x51ffa6a6a2a65904</span>, <span class='number'>0xb90cd2d26fd2debd</span>, <span class='number'>0xf70ef5f5f3f5fb06</span>,
+    <span class='number'>0xf2967979f979ef80</span>, <span class='number'>0xde306f6fa16f5fce</span>, <span class='number'>0x3f6d91917e91fcef</span>, <span class='number'>0xa4f852525552aa07</span>,
+    <span class='number'>0xc04760609d6027fd</span>, <span class='number'>0x6535bcbccabc8976</span>, <span class='number'>0x2b379b9b569baccd</span>, <span class='number'>0x018a8e8e028e048c</span>,
+    <span class='number'>0x5bd2a3a3b6a37115</span>, <span class='number'>0x186c0c0c300c603c</span>, <span class='number'>0xf6847b7bf17bff8a</span>, <span class='number'>0x6a803535d435b5e1</span>,
+    <span class='number'>0x3af51d1d741de869</span>, <span class='number'>0xddb3e0e0a7e05347</span>, <span class='number'>0xb321d7d77bd7f6ac</span>, <span class='number'>0x999cc2c22fc25eed</span>,
+    <span class='number'>0x5c432e2eb82e6d96</span>, <span class='number'>0x96294b4b314b627a</span>, <span class='number'>0xe15dfefedffea321</span>, <span class='number'>0xaed5575741578216</span>,
+    <span class='number'>0x2abd15155415a841</span>, <span class='number'>0xeee87777c1779fb6</span>, <span class='number'>0x6e923737dc37a5eb</span>, <span class='number'>0xd79ee5e5b3e57b56</span>,
+    <span class='number'>0x23139f9f469f8cd9</span>, <span class='number'>0xfd23f0f0e7f0d317</span>, <span class='number'>0x94204a4a354a6a7f</span>, <span class='number'>0xa944dada4fda9e95</span>,
+    <span class='number'>0xb0a258587d58fa25</span>, <span class='number'>0x8fcfc9c903c906ca</span>, <span class='number'>0x527c2929a429558d</span>, <span class='number'>0x145a0a0a280a5022</span>,
+    <span class='number'>0x7f50b1b1feb1e14f</span>, <span class='number'>0x5dc9a0a0baa0691a</span>, <span class='number'>0xd6146b6bb16b7fda</span>, <span class='number'>0x17d985852e855cab</span>,
+    <span class='number'>0x673cbdbdcebd8173</span>, <span class='number'>0xba8f5d5d695dd234</span>, <span class='number'>0x2090101040108050</span>, <span class='number'>0xf507f4f4f7f4f303</span>,
+    <span class='number'>0x8bddcbcb0bcb16c0</span>, <span class='number'>0x7cd33e3ef83eedc6</span>, <span class='number'>0x0a2d050514052811</span>, <span class='number'>0xce78676781671fe6</span>,
+    <span class='number'>0xd597e4e4b7e47353</span>, <span class='number'>0x4e0227279c2725bb</span>, <span class='number'>0x8273414119413258</span>, <span class='number'>0x0ba78b8b168b2c9d</span>,
+    <span class='number'>0x53f6a7a7a6a75101</span>, <span class='number'>0xfab27d7de97dcf94</span>, <span class='number'>0x374995956e95dcfb</span>, <span class='number'>0xad56d8d847d88e9f</span>,
+    <span class='number'>0xeb70fbfbcbfb8b30</span>, <span class='number'>0xc1cdeeee9fee2371</span>, <span class='number'>0xf8bb7c7ced7cc791</span>, <span class='number'>0xcc716666856617e3</span>,
+    <span class='number'>0xa77bdddd53dda68e</span>, <span class='number'>0x2eaf17175c17b84b</span>, <span class='number'>0x8e45474701470246</span>, <span class='number'>0x211a9e9e429e84dc</span>,
+    <span class='number'>0x89d4caca0fca1ec5</span>, <span class='number'>0x5a582d2db42d7599</span>, <span class='number'>0x632ebfbfc6bf9179</span>, <span class='number'>0x0e3f07071c07381b</span>,
+    <span class='number'>0x47acadad8ead0123</span>, <span class='number'>0xb4b05a5a755aea2f</span>, <span class='number'>0x1bef838336836cb5</span>, <span class='number'>0x66b63333cc3385ff</span>,
+    <span class='number'>0xc65c636391633ff2</span>, <span class='number'>0x041202020802100a</span>, <span class='number'>0x4993aaaa92aa3938</span>, <span class='number'>0xe2de7171d971afa8</span>,
+    <span class='number'>0x8dc6c8c807c80ecf</span>, <span class='number'>0x32d119196419c87d</span>, <span class='number'>0x923b494939497270</span>, <span class='number'>0xaf5fd9d943d9869a</span>,
+    <span class='number'>0xf931f2f2eff2c31d</span>, <span class='number'>0xdba8e3e3abe34b48</span>, <span class='number'>0xb6b95b5b715be22a</span>, <span class='number'>0x0dbc88881a883492</span>,
+    <span class='number'>0x293e9a9a529aa4c8</span>, <span class='number'>0x4c0b262698262dbe</span>, <span class='number'>0x64bf3232c8328dfa</span>, <span class='number'>0x7d59b0b0fab0e94a</span>,
+    <span class='number'>0xcff2e9e983e91b6a</span>, <span class='number'>0x1e770f0f3c0f7833</span>, <span class='number'>0xb733d5d573d5e6a6</span>, <span class='number'>0x1df480803a8074ba</span>,
+    <span class='number'>0x6127bebec2be997c</span>, <span class='number'>0x87ebcdcd13cd26de</span>, <span class='number'>0x68893434d034bde4</span>, <span class='number'>0x903248483d487a75</span>,
+    <span class='number'>0xe354ffffdbffab24</span>, <span class='number'>0xf48d7a7af57af78f</span>, <span class='number'>0x3d6490907a90f4ea</span>, <span class='number'>0xbe9d5f5f615fc23e</span>,
+    <span class='number'>0x403d202080201da0</span>, <span class='number'>0xd00f6868bd6867d5</span>, <span class='number'>0x34ca1a1a681ad072</span>, <span class='number'>0x41b7aeae82ae192c</span>,
+    <span class='number'>0x757db4b4eab4c95e</span>, <span class='number'>0xa8ce54544d549a19</span>, <span class='number'>0x3b7f93937693ece5</span>, <span class='number'>0x442f222288220daa</span>,
+    <span class='number'>0xc86364648d6407e9</span>, <span class='number'>0xff2af1f1e3f1db12</span>, <span class='number'>0xe6cc7373d173bfa2</span>, <span class='number'>0x248212124812905a</span>,
+    <span class='number'>0x807a40401d403a5d</span>, <span class='number'>0x1048080820084028</span>, <span class='number'>0x9b95c3c32bc356e8</span>, <span class='number'>0xc5dfecec97ec337b</span>,
+    <span class='number'>0xab4ddbdb4bdb9690</span>, <span class='number'>0x5fc0a1a1bea1611f</span>, <span class='number'>0x07918d8d0e8d1c83</span>, <span class='number'>0x7ac83d3df43df5c9</span>,
+    <span class='number'>0x335b97976697ccf1</span>, <span class='number'>0x0000000000000000</span>, <span class='number'>0x83f9cfcf1bcf36d4</span>, <span class='number'>0x566e2b2bac2b4587</span>,
+    <span class='number'>0xece17676c57697b3</span>, <span class='number'>0x19e68282328264b0</span>, <span class='number'>0xb128d6d67fd6fea9</span>, <span class='number'>0x36c31b1b6c1bd877</span>,
+    <span class='number'>0x7774b5b5eeb5c15b</span>, <span class='number'>0x43beafaf86af1129</span>, <span class='number'>0xd41d6a6ab56a77df</span>, <span class='number'>0xa0ea50505d50ba0d</span>,
+    <span class='number'>0x8a5745450945124c</span>, <span class='number'>0xfb38f3f3ebf3cb18</span>, <span class='number'>0x60ad3030c0309df0</span>, <span class='number'>0xc3c4efef9bef2b74</span>,
+    <span class='number'>0x7eda3f3ffc3fe5c3</span>, <span class='number'>0xaac755554955921c</span>, <span class='number'>0x59dba2a2b2a27910</span>, <span class='number'>0xc9e9eaea8fea0365</span>,
+    <span class='number'>0xca6a656589650fec</span>, <span class='number'>0x6903babad2bab968</span>, <span class='number'>0x5e4a2f2fbc2f6593</span>, <span class='number'>0x9d8ec0c027c04ee7</span>,
+    <span class='number'>0xa160dede5fdebe81</span>, <span class='number'>0x38fc1c1c701ce06c</span>, <span class='number'>0xe746fdfdd3fdbb2e</span>, <span class='number'>0x9a1f4d4d294d5264</span>,
+    <span class='number'>0x397692927292e4e0</span>, <span class='number'>0xeafa7575c9758fbc</span>, <span class='number'>0x0c3606061806301e</span>, <span class='number'>0x09ae8a8a128a2498</span>,
+    <span class='number'>0x794bb2b2f2b2f940</span>, <span class='number'>0xd185e6e6bfe66359</span>, <span class='number'>0x1c7e0e0e380e7036</span>, <span class='number'>0x3ee71f1f7c1ff863</span>,
+    <span class='number'>0xc4556262956237f7</span>, <span class='number'>0xb53ad4d477d4eea3</span>, <span class='number'>0x4d81a8a89aa82932</span>, <span class='number'>0x315296966296c4f4</span>,
+    <span class='number'>0xef62f9f9c3f99b3a</span>, <span class='number'>0x97a3c5c533c566f6</span>, <span class='number'>0x4a102525942535b1</span>, <span class='number'>0xb2ab59597959f220</span>,
+    <span class='number'>0x15d084842a8454ae</span>, <span class='number'>0xe4c57272d572b7a7</span>, <span class='number'>0x72ec3939e439d5dd</span>, <span class='number'>0x98164c4c2d4c5a61</span>,
+    <span class='number'>0xbc945e5e655eca3b</span>, <span class='number'>0xf09f7878fd78e785</span>, <span class='number'>0x70e53838e038ddd8</span>, <span class='number'>0x05988c8c0a8c1486</span>,
+    <span class='number'>0xbf17d1d163d1c6b2</span>, <span class='number'>0x57e4a5a5aea5410b</span>, <span class='number'>0xd9a1e2e2afe2434d</span>, <span class='number'>0xc24e616199612ff8</span>,
+    <span class='number'>0x7b42b3b3f6b3f145</span>, <span class='number'>0x42342121842115a5</span>, <span class='number'>0x25089c9c4a9c94d6</span>, <span class='number'>0x3cee1e1e781ef066</span>,
+    <span class='number'>0x8661434311432252</span>, <span class='number'>0x93b1c7c73bc776fc</span>, <span class='number'>0xe54ffcfcd7fcb32b</span>, <span class='number'>0x0824040410042014</span>,
+    <span class='number'>0xa2e351515951b208</span>, <span class='number'>0x2f2599995e99bcc7</span>, <span class='number'>0xda226d6da96d4fc4</span>, <span class='number'>0x1a650d0d340d6839</span>,
+    <span class='number'>0xe979fafacffa8335</span>, <span class='number'>0xa369dfdf5bdfb684</span>, <span class='number'>0xfca97e7ee57ed79b</span>, <span class='number'>0x4819242490243db4</span>,
+    <span class='number'>0x76fe3b3bec3bc5d7</span>, <span class='number'>0x4b9aabab96ab313d</span>, <span class='number'>0x81f0cece1fce3ed1</span>, <span class='number'>0x2299111144118855</span>,
+    <span class='number'>0x03838f8f068f0c89</span>, <span class='number'>0x9c044e4e254e4a6b</span>, <span class='number'>0x7366b7b7e6b7d151</span>, <span class='number'>0xcbe0ebeb8beb0b60</span>,
+    <span class='number'>0x78c13c3cf03cfdcc</span>, <span class='number'>0x1ffd81813e817cbf</span>, <span class='number'>0x354094946a94d4fe</span>, <span class='number'>0xf31cf7f7fbf7eb0c</span>,
+    <span class='number'>0x6f18b9b9deb9a167</span>, <span class='number'>0x268b13134c13985f</span>, <span class='number'>0x58512c2cb02c7d9c</span>, <span class='number'>0xbb05d3d36bd3d6b8</span>,
+    <span class='number'>0xd38ce7e7bbe76b5c</span>, <span class='number'>0xdc396e6ea56e57cb</span>, <span class='number'>0x95aac4c437c46ef3</span>, <span class='number'>0x061b03030c03180f</span>,
+    <span class='number'>0xacdc565645568a13</span>, <span class='number'>0x885e44440d441a49</span>, <span class='number'>0xfea07f7fe17fdf9e</span>, <span class='number'>0x4f88a9a99ea92137</span>,
+    <span class='number'>0x54672a2aa82a4d82</span>, <span class='number'>0x6b0abbbbd6bbb16d</span>, <span class='number'>0x9f87c1c123c146e2</span>, <span class='number'>0xa6f153535153a202</span>,
+    <span class='number'>0xa572dcdc57dcae8b</span>, <span class='number'>0x16530b0b2c0b5827</span>, <span class='number'>0x27019d9d4e9d9cd3</span>, <span class='number'>0xd82b6c6cad6c47c1</span>,
+    <span class='number'>0x62a43131c43195f5</span>, <span class='number'>0xe8f37474cd7487b9</span>, <span class='number'>0xf115f6f6fff6e309</span>, <span class='number'>0x8c4c464605460a43</span>,
+    <span class='number'>0x45a5acac8aac0926</span>, <span class='number'>0x0fb589891e893c97</span>, <span class='number'>0x28b414145014a044</span>, <span class='number'>0xdfbae1e1a3e15b42</span>,
+    <span class='number'>0x2ca616165816b04e</span>, <span class='number'>0x74f73a3ae83acdd2</span>, <span class='number'>0xd2066969b9696fd0</span>, <span class='number'>0x124109092409482d</span>,
+    <span class='number'>0xe0d77070dd70a7ad</span>, <span class='number'>0x716fb6b6e2b6d954</span>, <span class='number'>0xbd1ed0d067d0ceb7</span>, <span class='number'>0xc7d6eded93ed3b7e</span>,
+    <span class='number'>0x85e2cccc17cc2edb</span>, <span class='number'>0x8468424215422a57</span>, <span class='number'>0x2d2c98985a98b4c2</span>, <span class='number'>0x55eda4a4aaa4490e</span>,
+    <span class='number'>0x50752828a0285d88</span>, <span class='number'>0xb8865c5c6d5cda31</span>, <span class='number'>0xed6bf8f8c7f8933f</span>, <span class='number'>0x11c28686228644a4</span>,
+];
+
+<span class='kw'>static</span> <span class='ident'>C3</span>: [<span class='ident'>u64</span>; <span class='number'>256</span>] <span class='op'>=</span> [
+    <span class='number'>0x7830d818186018c0</span>, <span class='number'>0xaf462623238c2305</span>, <span class='number'>0xf991b8c6c63fc67e</span>, <span class='number'>0x6fcdfbe8e887e813</span>,
+    <span class='number'>0xa113cb878726874c</span>, <span class='number'>0x626d11b8b8dab8a9</span>, <span class='number'>0x0502090101040108</span>, <span class='number'>0x6e9e0d4f4f214f42</span>,
+    <span class='number'>0xee6c9b3636d836ad</span>, <span class='number'>0x0451ffa6a6a2a659</span>, <span class='number'>0xbdb90cd2d26fd2de</span>, <span class='number'>0x06f70ef5f5f3f5fb</span>,
+    <span class='number'>0x80f2967979f979ef</span>, <span class='number'>0xcede306f6fa16f5f</span>, <span class='number'>0xef3f6d91917e91fc</span>, <span class='number'>0x07a4f852525552aa</span>,
+    <span class='number'>0xfdc04760609d6027</span>, <span class='number'>0x766535bcbccabc89</span>, <span class='number'>0xcd2b379b9b569bac</span>, <span class='number'>0x8c018a8e8e028e04</span>,
+    <span class='number'>0x155bd2a3a3b6a371</span>, <span class='number'>0x3c186c0c0c300c60</span>, <span class='number'>0x8af6847b7bf17bff</span>, <span class='number'>0xe16a803535d435b5</span>,
+    <span class='number'>0x693af51d1d741de8</span>, <span class='number'>0x47ddb3e0e0a7e053</span>, <span class='number'>0xacb321d7d77bd7f6</span>, <span class='number'>0xed999cc2c22fc25e</span>,
+    <span class='number'>0x965c432e2eb82e6d</span>, <span class='number'>0x7a96294b4b314b62</span>, <span class='number'>0x21e15dfefedffea3</span>, <span class='number'>0x16aed55757415782</span>,
+    <span class='number'>0x412abd15155415a8</span>, <span class='number'>0xb6eee87777c1779f</span>, <span class='number'>0xeb6e923737dc37a5</span>, <span class='number'>0x56d79ee5e5b3e57b</span>,
+    <span class='number'>0xd923139f9f469f8c</span>, <span class='number'>0x17fd23f0f0e7f0d3</span>, <span class='number'>0x7f94204a4a354a6a</span>, <span class='number'>0x95a944dada4fda9e</span>,
+    <span class='number'>0x25b0a258587d58fa</span>, <span class='number'>0xca8fcfc9c903c906</span>, <span class='number'>0x8d527c2929a42955</span>, <span class='number'>0x22145a0a0a280a50</span>,
+    <span class='number'>0x4f7f50b1b1feb1e1</span>, <span class='number'>0x1a5dc9a0a0baa069</span>, <span class='number'>0xdad6146b6bb16b7f</span>, <span class='number'>0xab17d985852e855c</span>,
+    <span class='number'>0x73673cbdbdcebd81</span>, <span class='number'>0x34ba8f5d5d695dd2</span>, <span class='number'>0x5020901010401080</span>, <span class='number'>0x03f507f4f4f7f4f3</span>,
+    <span class='number'>0xc08bddcbcb0bcb16</span>, <span class='number'>0xc67cd33e3ef83eed</span>, <span class='number'>0x110a2d0505140528</span>, <span class='number'>0xe6ce78676781671f</span>,
+    <span class='number'>0x53d597e4e4b7e473</span>, <span class='number'>0xbb4e0227279c2725</span>, <span class='number'>0x5882734141194132</span>, <span class='number'>0x9d0ba78b8b168b2c</span>,
+    <span class='number'>0x0153f6a7a7a6a751</span>, <span class='number'>0x94fab27d7de97dcf</span>, <span class='number'>0xfb374995956e95dc</span>, <span class='number'>0x9fad56d8d847d88e</span>,
+    <span class='number'>0x30eb70fbfbcbfb8b</span>, <span class='number'>0x71c1cdeeee9fee23</span>, <span class='number'>0x91f8bb7c7ced7cc7</span>, <span class='number'>0xe3cc716666856617</span>,
+    <span class='number'>0x8ea77bdddd53dda6</span>, <span class='number'>0x4b2eaf17175c17b8</span>, <span class='number'>0x468e454747014702</span>, <span class='number'>0xdc211a9e9e429e84</span>,
+    <span class='number'>0xc589d4caca0fca1e</span>, <span class='number'>0x995a582d2db42d75</span>, <span class='number'>0x79632ebfbfc6bf91</span>, <span class='number'>0x1b0e3f07071c0738</span>,
+    <span class='number'>0x2347acadad8ead01</span>, <span class='number'>0x2fb4b05a5a755aea</span>, <span class='number'>0xb51bef838336836c</span>, <span class='number'>0xff66b63333cc3385</span>,
+    <span class='number'>0xf2c65c636391633f</span>, <span class='number'>0x0a04120202080210</span>, <span class='number'>0x384993aaaa92aa39</span>, <span class='number'>0xa8e2de7171d971af</span>,
+    <span class='number'>0xcf8dc6c8c807c80e</span>, <span class='number'>0x7d32d119196419c8</span>, <span class='number'>0x70923b4949394972</span>, <span class='number'>0x9aaf5fd9d943d986</span>,
+    <span class='number'>0x1df931f2f2eff2c3</span>, <span class='number'>0x48dba8e3e3abe34b</span>, <span class='number'>0x2ab6b95b5b715be2</span>, <span class='number'>0x920dbc88881a8834</span>,
+    <span class='number'>0xc8293e9a9a529aa4</span>, <span class='number'>0xbe4c0b262698262d</span>, <span class='number'>0xfa64bf3232c8328d</span>, <span class='number'>0x4a7d59b0b0fab0e9</span>,
+    <span class='number'>0x6acff2e9e983e91b</span>, <span class='number'>0x331e770f0f3c0f78</span>, <span class='number'>0xa6b733d5d573d5e6</span>, <span class='number'>0xba1df480803a8074</span>,
+    <span class='number'>0x7c6127bebec2be99</span>, <span class='number'>0xde87ebcdcd13cd26</span>, <span class='number'>0xe468893434d034bd</span>, <span class='number'>0x75903248483d487a</span>,
+    <span class='number'>0x24e354ffffdbffab</span>, <span class='number'>0x8ff48d7a7af57af7</span>, <span class='number'>0xea3d6490907a90f4</span>, <span class='number'>0x3ebe9d5f5f615fc2</span>,
+    <span class='number'>0xa0403d202080201d</span>, <span class='number'>0xd5d00f6868bd6867</span>, <span class='number'>0x7234ca1a1a681ad0</span>, <span class='number'>0x2c41b7aeae82ae19</span>,
+    <span class='number'>0x5e757db4b4eab4c9</span>, <span class='number'>0x19a8ce54544d549a</span>, <span class='number'>0xe53b7f93937693ec</span>, <span class='number'>0xaa442f222288220d</span>,
+    <span class='number'>0xe9c86364648d6407</span>, <span class='number'>0x12ff2af1f1e3f1db</span>, <span class='number'>0xa2e6cc7373d173bf</span>, <span class='number'>0x5a24821212481290</span>,
+    <span class='number'>0x5d807a40401d403a</span>, <span class='number'>0x2810480808200840</span>, <span class='number'>0xe89b95c3c32bc356</span>, <span class='number'>0x7bc5dfecec97ec33</span>,
+    <span class='number'>0x90ab4ddbdb4bdb96</span>, <span class='number'>0x1f5fc0a1a1bea161</span>, <span class='number'>0x8307918d8d0e8d1c</span>, <span class='number'>0xc97ac83d3df43df5</span>,
+    <span class='number'>0xf1335b97976697cc</span>, <span class='number'>0x0000000000000000</span>, <span class='number'>0xd483f9cfcf1bcf36</span>, <span class='number'>0x87566e2b2bac2b45</span>,
+    <span class='number'>0xb3ece17676c57697</span>, <span class='number'>0xb019e68282328264</span>, <span class='number'>0xa9b128d6d67fd6fe</span>, <span class='number'>0x7736c31b1b6c1bd8</span>,
+    <span class='number'>0x5b7774b5b5eeb5c1</span>, <span class='number'>0x2943beafaf86af11</span>, <span class='number'>0xdfd41d6a6ab56a77</span>, <span class='number'>0x0da0ea50505d50ba</span>,
+    <span class='number'>0x4c8a574545094512</span>, <span class='number'>0x18fb38f3f3ebf3cb</span>, <span class='number'>0xf060ad3030c0309d</span>, <span class='number'>0x74c3c4efef9bef2b</span>,
+    <span class='number'>0xc37eda3f3ffc3fe5</span>, <span class='number'>0x1caac75555495592</span>, <span class='number'>0x1059dba2a2b2a279</span>, <span class='number'>0x65c9e9eaea8fea03</span>,
+    <span class='number'>0xecca6a656589650f</span>, <span class='number'>0x686903babad2bab9</span>, <span class='number'>0x935e4a2f2fbc2f65</span>, <span class='number'>0xe79d8ec0c027c04e</span>,
+    <span class='number'>0x81a160dede5fdebe</span>, <span class='number'>0x6c38fc1c1c701ce0</span>, <span class='number'>0x2ee746fdfdd3fdbb</span>, <span class='number'>0x649a1f4d4d294d52</span>,
+    <span class='number'>0xe0397692927292e4</span>, <span class='number'>0xbceafa7575c9758f</span>, <span class='number'>0x1e0c360606180630</span>, <span class='number'>0x9809ae8a8a128a24</span>,
+    <span class='number'>0x40794bb2b2f2b2f9</span>, <span class='number'>0x59d185e6e6bfe663</span>, <span class='number'>0x361c7e0e0e380e70</span>, <span class='number'>0x633ee71f1f7c1ff8</span>,
+    <span class='number'>0xf7c4556262956237</span>, <span class='number'>0xa3b53ad4d477d4ee</span>, <span class='number'>0x324d81a8a89aa829</span>, <span class='number'>0xf4315296966296c4</span>,
+    <span class='number'>0x3aef62f9f9c3f99b</span>, <span class='number'>0xf697a3c5c533c566</span>, <span class='number'>0xb14a102525942535</span>, <span class='number'>0x20b2ab59597959f2</span>,
+    <span class='number'>0xae15d084842a8454</span>, <span class='number'>0xa7e4c57272d572b7</span>, <span class='number'>0xdd72ec3939e439d5</span>, <span class='number'>0x6198164c4c2d4c5a</span>,
+    <span class='number'>0x3bbc945e5e655eca</span>, <span class='number'>0x85f09f7878fd78e7</span>, <span class='number'>0xd870e53838e038dd</span>, <span class='number'>0x8605988c8c0a8c14</span>,
+    <span class='number'>0xb2bf17d1d163d1c6</span>, <span class='number'>0x0b57e4a5a5aea541</span>, <span class='number'>0x4dd9a1e2e2afe243</span>, <span class='number'>0xf8c24e616199612f</span>,
+    <span class='number'>0x457b42b3b3f6b3f1</span>, <span class='number'>0xa542342121842115</span>, <span class='number'>0xd625089c9c4a9c94</span>, <span class='number'>0x663cee1e1e781ef0</span>,
+    <span class='number'>0x5286614343114322</span>, <span class='number'>0xfc93b1c7c73bc776</span>, <span class='number'>0x2be54ffcfcd7fcb3</span>, <span class='number'>0x1408240404100420</span>,
+    <span class='number'>0x08a2e351515951b2</span>, <span class='number'>0xc72f2599995e99bc</span>, <span class='number'>0xc4da226d6da96d4f</span>, <span class='number'>0x391a650d0d340d68</span>,
+    <span class='number'>0x35e979fafacffa83</span>, <span class='number'>0x84a369dfdf5bdfb6</span>, <span class='number'>0x9bfca97e7ee57ed7</span>, <span class='number'>0xb44819242490243d</span>,
+    <span class='number'>0xd776fe3b3bec3bc5</span>, <span class='number'>0x3d4b9aabab96ab31</span>, <span class='number'>0xd181f0cece1fce3e</span>, <span class='number'>0x5522991111441188</span>,
+    <span class='number'>0x8903838f8f068f0c</span>, <span class='number'>0x6b9c044e4e254e4a</span>, <span class='number'>0x517366b7b7e6b7d1</span>, <span class='number'>0x60cbe0ebeb8beb0b</span>,
+    <span class='number'>0xcc78c13c3cf03cfd</span>, <span class='number'>0xbf1ffd81813e817c</span>, <span class='number'>0xfe354094946a94d4</span>, <span class='number'>0x0cf31cf7f7fbf7eb</span>,
+    <span class='number'>0x676f18b9b9deb9a1</span>, <span class='number'>0x5f268b13134c1398</span>, <span class='number'>0x9c58512c2cb02c7d</span>, <span class='number'>0xb8bb05d3d36bd3d6</span>,
+    <span class='number'>0x5cd38ce7e7bbe76b</span>, <span class='number'>0xcbdc396e6ea56e57</span>, <span class='number'>0xf395aac4c437c46e</span>, <span class='number'>0x0f061b03030c0318</span>,
+    <span class='number'>0x13acdc565645568a</span>, <span class='number'>0x49885e44440d441a</span>, <span class='number'>0x9efea07f7fe17fdf</span>, <span class='number'>0x374f88a9a99ea921</span>,
+    <span class='number'>0x8254672a2aa82a4d</span>, <span class='number'>0x6d6b0abbbbd6bbb1</span>, <span class='number'>0xe29f87c1c123c146</span>, <span class='number'>0x02a6f153535153a2</span>,
+    <span class='number'>0x8ba572dcdc57dcae</span>, <span class='number'>0x2716530b0b2c0b58</span>, <span class='number'>0xd327019d9d4e9d9c</span>, <span class='number'>0xc1d82b6c6cad6c47</span>,
+    <span class='number'>0xf562a43131c43195</span>, <span class='number'>0xb9e8f37474cd7487</span>, <span class='number'>0x09f115f6f6fff6e3</span>, <span class='number'>0x438c4c464605460a</span>,
+    <span class='number'>0x2645a5acac8aac09</span>, <span class='number'>0x970fb589891e893c</span>, <span class='number'>0x4428b414145014a0</span>, <span class='number'>0x42dfbae1e1a3e15b</span>,
+    <span class='number'>0x4e2ca616165816b0</span>, <span class='number'>0xd274f73a3ae83acd</span>, <span class='number'>0xd0d2066969b9696f</span>, <span class='number'>0x2d12410909240948</span>,
+    <span class='number'>0xade0d77070dd70a7</span>, <span class='number'>0x54716fb6b6e2b6d9</span>, <span class='number'>0xb7bd1ed0d067d0ce</span>, <span class='number'>0x7ec7d6eded93ed3b</span>,
+    <span class='number'>0xdb85e2cccc17cc2e</span>, <span class='number'>0x578468424215422a</span>, <span class='number'>0xc22d2c98985a98b4</span>, <span class='number'>0x0e55eda4a4aaa449</span>,
+    <span class='number'>0x8850752828a0285d</span>, <span class='number'>0x31b8865c5c6d5cda</span>, <span class='number'>0x3fed6bf8f8c7f893</span>, <span class='number'>0xa411c28686228644</span>,
+];
+
+<span class='kw'>static</span> <span class='ident'>C4</span>: [<span class='ident'>u64</span>; <span class='number'>256</span>] <span class='op'>=</span> [
+    <span class='number'>0xc07830d818186018</span>, <span class='number'>0x05af462623238c23</span>, <span class='number'>0x7ef991b8c6c63fc6</span>, <span class='number'>0x136fcdfbe8e887e8</span>,
+    <span class='number'>0x4ca113cb87872687</span>, <span class='number'>0xa9626d11b8b8dab8</span>, <span class='number'>0x0805020901010401</span>, <span class='number'>0x426e9e0d4f4f214f</span>,
+    <span class='number'>0xadee6c9b3636d836</span>, <span class='number'>0x590451ffa6a6a2a6</span>, <span class='number'>0xdebdb90cd2d26fd2</span>, <span class='number'>0xfb06f70ef5f5f3f5</span>,
+    <span class='number'>0xef80f2967979f979</span>, <span class='number'>0x5fcede306f6fa16f</span>, <span class='number'>0xfcef3f6d91917e91</span>, <span class='number'>0xaa07a4f852525552</span>,
+    <span class='number'>0x27fdc04760609d60</span>, <span class='number'>0x89766535bcbccabc</span>, <span class='number'>0xaccd2b379b9b569b</span>, <span class='number'>0x048c018a8e8e028e</span>,
+    <span class='number'>0x71155bd2a3a3b6a3</span>, <span class='number'>0x603c186c0c0c300c</span>, <span class='number'>0xff8af6847b7bf17b</span>, <span class='number'>0xb5e16a803535d435</span>,
+    <span class='number'>0xe8693af51d1d741d</span>, <span class='number'>0x5347ddb3e0e0a7e0</span>, <span class='number'>0xf6acb321d7d77bd7</span>, <span class='number'>0x5eed999cc2c22fc2</span>,
+    <span class='number'>0x6d965c432e2eb82e</span>, <span class='number'>0x627a96294b4b314b</span>, <span class='number'>0xa321e15dfefedffe</span>, <span class='number'>0x8216aed557574157</span>,
+    <span class='number'>0xa8412abd15155415</span>, <span class='number'>0x9fb6eee87777c177</span>, <span class='number'>0xa5eb6e923737dc37</span>, <span class='number'>0x7b56d79ee5e5b3e5</span>,
+    <span class='number'>0x8cd923139f9f469f</span>, <span class='number'>0xd317fd23f0f0e7f0</span>, <span class='number'>0x6a7f94204a4a354a</span>, <span class='number'>0x9e95a944dada4fda</span>,
+    <span class='number'>0xfa25b0a258587d58</span>, <span class='number'>0x06ca8fcfc9c903c9</span>, <span class='number'>0x558d527c2929a429</span>, <span class='number'>0x5022145a0a0a280a</span>,
+    <span class='number'>0xe14f7f50b1b1feb1</span>, <span class='number'>0x691a5dc9a0a0baa0</span>, <span class='number'>0x7fdad6146b6bb16b</span>, <span class='number'>0x5cab17d985852e85</span>,
+    <span class='number'>0x8173673cbdbdcebd</span>, <span class='number'>0xd234ba8f5d5d695d</span>, <span class='number'>0x8050209010104010</span>, <span class='number'>0xf303f507f4f4f7f4</span>,
+    <span class='number'>0x16c08bddcbcb0bcb</span>, <span class='number'>0xedc67cd33e3ef83e</span>, <span class='number'>0x28110a2d05051405</span>, <span class='number'>0x1fe6ce7867678167</span>,
+    <span class='number'>0x7353d597e4e4b7e4</span>, <span class='number'>0x25bb4e0227279c27</span>, <span class='number'>0x3258827341411941</span>, <span class='number'>0x2c9d0ba78b8b168b</span>,
+    <span class='number'>0x510153f6a7a7a6a7</span>, <span class='number'>0xcf94fab27d7de97d</span>, <span class='number'>0xdcfb374995956e95</span>, <span class='number'>0x8e9fad56d8d847d8</span>,
+    <span class='number'>0x8b30eb70fbfbcbfb</span>, <span class='number'>0x2371c1cdeeee9fee</span>, <span class='number'>0xc791f8bb7c7ced7c</span>, <span class='number'>0x17e3cc7166668566</span>,
+    <span class='number'>0xa68ea77bdddd53dd</span>, <span class='number'>0xb84b2eaf17175c17</span>, <span class='number'>0x02468e4547470147</span>, <span class='number'>0x84dc211a9e9e429e</span>,
+    <span class='number'>0x1ec589d4caca0fca</span>, <span class='number'>0x75995a582d2db42d</span>, <span class='number'>0x9179632ebfbfc6bf</span>, <span class='number'>0x381b0e3f07071c07</span>,
+    <span class='number'>0x012347acadad8ead</span>, <span class='number'>0xea2fb4b05a5a755a</span>, <span class='number'>0x6cb51bef83833683</span>, <span class='number'>0x85ff66b63333cc33</span>,
+    <span class='number'>0x3ff2c65c63639163</span>, <span class='number'>0x100a041202020802</span>, <span class='number'>0x39384993aaaa92aa</span>, <span class='number'>0xafa8e2de7171d971</span>,
+    <span class='number'>0x0ecf8dc6c8c807c8</span>, <span class='number'>0xc87d32d119196419</span>, <span class='number'>0x7270923b49493949</span>, <span class='number'>0x869aaf5fd9d943d9</span>,
+    <span class='number'>0xc31df931f2f2eff2</span>, <span class='number'>0x4b48dba8e3e3abe3</span>, <span class='number'>0xe22ab6b95b5b715b</span>, <span class='number'>0x34920dbc88881a88</span>,
+    <span class='number'>0xa4c8293e9a9a529a</span>, <span class='number'>0x2dbe4c0b26269826</span>, <span class='number'>0x8dfa64bf3232c832</span>, <span class='number'>0xe94a7d59b0b0fab0</span>,
+    <span class='number'>0x1b6acff2e9e983e9</span>, <span class='number'>0x78331e770f0f3c0f</span>, <span class='number'>0xe6a6b733d5d573d5</span>, <span class='number'>0x74ba1df480803a80</span>,
+    <span class='number'>0x997c6127bebec2be</span>, <span class='number'>0x26de87ebcdcd13cd</span>, <span class='number'>0xbde468893434d034</span>, <span class='number'>0x7a75903248483d48</span>,
+    <span class='number'>0xab24e354ffffdbff</span>, <span class='number'>0xf78ff48d7a7af57a</span>, <span class='number'>0xf4ea3d6490907a90</span>, <span class='number'>0xc23ebe9d5f5f615f</span>,
+    <span class='number'>0x1da0403d20208020</span>, <span class='number'>0x67d5d00f6868bd68</span>, <span class='number'>0xd07234ca1a1a681a</span>, <span class='number'>0x192c41b7aeae82ae</span>,
+    <span class='number'>0xc95e757db4b4eab4</span>, <span class='number'>0x9a19a8ce54544d54</span>, <span class='number'>0xece53b7f93937693</span>, <span class='number'>0x0daa442f22228822</span>,
+    <span class='number'>0x07e9c86364648d64</span>, <span class='number'>0xdb12ff2af1f1e3f1</span>, <span class='number'>0xbfa2e6cc7373d173</span>, <span class='number'>0x905a248212124812</span>,
+    <span class='number'>0x3a5d807a40401d40</span>, <span class='number'>0x4028104808082008</span>, <span class='number'>0x56e89b95c3c32bc3</span>, <span class='number'>0x337bc5dfecec97ec</span>,
+    <span class='number'>0x9690ab4ddbdb4bdb</span>, <span class='number'>0x611f5fc0a1a1bea1</span>, <span class='number'>0x1c8307918d8d0e8d</span>, <span class='number'>0xf5c97ac83d3df43d</span>,
+    <span class='number'>0xccf1335b97976697</span>, <span class='number'>0x0000000000000000</span>, <span class='number'>0x36d483f9cfcf1bcf</span>, <span class='number'>0x4587566e2b2bac2b</span>,
+    <span class='number'>0x97b3ece17676c576</span>, <span class='number'>0x64b019e682823282</span>, <span class='number'>0xfea9b128d6d67fd6</span>, <span class='number'>0xd87736c31b1b6c1b</span>,
+    <span class='number'>0xc15b7774b5b5eeb5</span>, <span class='number'>0x112943beafaf86af</span>, <span class='number'>0x77dfd41d6a6ab56a</span>, <span class='number'>0xba0da0ea50505d50</span>,
+    <span class='number'>0x124c8a5745450945</span>, <span class='number'>0xcb18fb38f3f3ebf3</span>, <span class='number'>0x9df060ad3030c030</span>, <span class='number'>0x2b74c3c4efef9bef</span>,
+    <span class='number'>0xe5c37eda3f3ffc3f</span>, <span class='number'>0x921caac755554955</span>, <span class='number'>0x791059dba2a2b2a2</span>, <span class='number'>0x0365c9e9eaea8fea</span>,
+    <span class='number'>0x0fecca6a65658965</span>, <span class='number'>0xb9686903babad2ba</span>, <span class='number'>0x65935e4a2f2fbc2f</span>, <span class='number'>0x4ee79d8ec0c027c0</span>,
+    <span class='number'>0xbe81a160dede5fde</span>, <span class='number'>0xe06c38fc1c1c701c</span>, <span class='number'>0xbb2ee746fdfdd3fd</span>, <span class='number'>0x52649a1f4d4d294d</span>,
+    <span class='number'>0xe4e0397692927292</span>, <span class='number'>0x8fbceafa7575c975</span>, <span class='number'>0x301e0c3606061806</span>, <span class='number'>0x249809ae8a8a128a</span>,
+    <span class='number'>0xf940794bb2b2f2b2</span>, <span class='number'>0x6359d185e6e6bfe6</span>, <span class='number'>0x70361c7e0e0e380e</span>, <span class='number'>0xf8633ee71f1f7c1f</span>,
+    <span class='number'>0x37f7c45562629562</span>, <span class='number'>0xeea3b53ad4d477d4</span>, <span class='number'>0x29324d81a8a89aa8</span>, <span class='number'>0xc4f4315296966296</span>,
+    <span class='number'>0x9b3aef62f9f9c3f9</span>, <span class='number'>0x66f697a3c5c533c5</span>, <span class='number'>0x35b14a1025259425</span>, <span class='number'>0xf220b2ab59597959</span>,
+    <span class='number'>0x54ae15d084842a84</span>, <span class='number'>0xb7a7e4c57272d572</span>, <span class='number'>0xd5dd72ec3939e439</span>, <span class='number'>0x5a6198164c4c2d4c</span>,
+    <span class='number'>0xca3bbc945e5e655e</span>, <span class='number'>0xe785f09f7878fd78</span>, <span class='number'>0xddd870e53838e038</span>, <span class='number'>0x148605988c8c0a8c</span>,
+    <span class='number'>0xc6b2bf17d1d163d1</span>, <span class='number'>0x410b57e4a5a5aea5</span>, <span class='number'>0x434dd9a1e2e2afe2</span>, <span class='number'>0x2ff8c24e61619961</span>,
+    <span class='number'>0xf1457b42b3b3f6b3</span>, <span class='number'>0x15a5423421218421</span>, <span class='number'>0x94d625089c9c4a9c</span>, <span class='number'>0xf0663cee1e1e781e</span>,
+    <span class='number'>0x2252866143431143</span>, <span class='number'>0x76fc93b1c7c73bc7</span>, <span class='number'>0xb32be54ffcfcd7fc</span>, <span class='number'>0x2014082404041004</span>,
+    <span class='number'>0xb208a2e351515951</span>, <span class='number'>0xbcc72f2599995e99</span>, <span class='number'>0x4fc4da226d6da96d</span>, <span class='number'>0x68391a650d0d340d</span>,
+    <span class='number'>0x8335e979fafacffa</span>, <span class='number'>0xb684a369dfdf5bdf</span>, <span class='number'>0xd79bfca97e7ee57e</span>, <span class='number'>0x3db4481924249024</span>,
+    <span class='number'>0xc5d776fe3b3bec3b</span>, <span class='number'>0x313d4b9aabab96ab</span>, <span class='number'>0x3ed181f0cece1fce</span>, <span class='number'>0x8855229911114411</span>,
+    <span class='number'>0x0c8903838f8f068f</span>, <span class='number'>0x4a6b9c044e4e254e</span>, <span class='number'>0xd1517366b7b7e6b7</span>, <span class='number'>0x0b60cbe0ebeb8beb</span>,
+    <span class='number'>0xfdcc78c13c3cf03c</span>, <span class='number'>0x7cbf1ffd81813e81</span>, <span class='number'>0xd4fe354094946a94</span>, <span class='number'>0xeb0cf31cf7f7fbf7</span>,
+    <span class='number'>0xa1676f18b9b9deb9</span>, <span class='number'>0x985f268b13134c13</span>, <span class='number'>0x7d9c58512c2cb02c</span>, <span class='number'>0xd6b8bb05d3d36bd3</span>,
+    <span class='number'>0x6b5cd38ce7e7bbe7</span>, <span class='number'>0x57cbdc396e6ea56e</span>, <span class='number'>0x6ef395aac4c437c4</span>, <span class='number'>0x180f061b03030c03</span>,
+    <span class='number'>0x8a13acdc56564556</span>, <span class='number'>0x1a49885e44440d44</span>, <span class='number'>0xdf9efea07f7fe17f</span>, <span class='number'>0x21374f88a9a99ea9</span>,
+    <span class='number'>0x4d8254672a2aa82a</span>, <span class='number'>0xb16d6b0abbbbd6bb</span>, <span class='number'>0x46e29f87c1c123c1</span>, <span class='number'>0xa202a6f153535153</span>,
+    <span class='number'>0xae8ba572dcdc57dc</span>, <span class='number'>0x582716530b0b2c0b</span>, <span class='number'>0x9cd327019d9d4e9d</span>, <span class='number'>0x47c1d82b6c6cad6c</span>,
+    <span class='number'>0x95f562a43131c431</span>, <span class='number'>0x87b9e8f37474cd74</span>, <span class='number'>0xe309f115f6f6fff6</span>, <span class='number'>0x0a438c4c46460546</span>,
+    <span class='number'>0x092645a5acac8aac</span>, <span class='number'>0x3c970fb589891e89</span>, <span class='number'>0xa04428b414145014</span>, <span class='number'>0x5b42dfbae1e1a3e1</span>,
+    <span class='number'>0xb04e2ca616165816</span>, <span class='number'>0xcdd274f73a3ae83a</span>, <span class='number'>0x6fd0d2066969b969</span>, <span class='number'>0x482d124109092409</span>,
+    <span class='number'>0xa7ade0d77070dd70</span>, <span class='number'>0xd954716fb6b6e2b6</span>, <span class='number'>0xceb7bd1ed0d067d0</span>, <span class='number'>0x3b7ec7d6eded93ed</span>,
+    <span class='number'>0x2edb85e2cccc17cc</span>, <span class='number'>0x2a57846842421542</span>, <span class='number'>0xb4c22d2c98985a98</span>, <span class='number'>0x490e55eda4a4aaa4</span>,
+    <span class='number'>0x5d8850752828a028</span>, <span class='number'>0xda31b8865c5c6d5c</span>, <span class='number'>0x933fed6bf8f8c7f8</span>, <span class='number'>0x44a411c286862286</span>,
+];
+
+<span class='kw'>static</span> <span class='ident'>C5</span>: [<span class='ident'>u64</span>; <span class='number'>256</span>] <span class='op'>=</span> [
+    <span class='number'>0x18c07830d8181860</span>, <span class='number'>0x2305af462623238c</span>, <span class='number'>0xc67ef991b8c6c63f</span>, <span class='number'>0xe8136fcdfbe8e887</span>,
+    <span class='number'>0x874ca113cb878726</span>, <span class='number'>0xb8a9626d11b8b8da</span>, <span class='number'>0x0108050209010104</span>, <span class='number'>0x4f426e9e0d4f4f21</span>,
+    <span class='number'>0x36adee6c9b3636d8</span>, <span class='number'>0xa6590451ffa6a6a2</span>, <span class='number'>0xd2debdb90cd2d26f</span>, <span class='number'>0xf5fb06f70ef5f5f3</span>,
+    <span class='number'>0x79ef80f2967979f9</span>, <span class='number'>0x6f5fcede306f6fa1</span>, <span class='number'>0x91fcef3f6d91917e</span>, <span class='number'>0x52aa07a4f8525255</span>,
+    <span class='number'>0x6027fdc04760609d</span>, <span class='number'>0xbc89766535bcbcca</span>, <span class='number'>0x9baccd2b379b9b56</span>, <span class='number'>0x8e048c018a8e8e02</span>,
+    <span class='number'>0xa371155bd2a3a3b6</span>, <span class='number'>0x0c603c186c0c0c30</span>, <span class='number'>0x7bff8af6847b7bf1</span>, <span class='number'>0x35b5e16a803535d4</span>,
+    <span class='number'>0x1de8693af51d1d74</span>, <span class='number'>0xe05347ddb3e0e0a7</span>, <span class='number'>0xd7f6acb321d7d77b</span>, <span class='number'>0xc25eed999cc2c22f</span>,
+    <span class='number'>0x2e6d965c432e2eb8</span>, <span class='number'>0x4b627a96294b4b31</span>, <span class='number'>0xfea321e15dfefedf</span>, <span class='number'>0x578216aed5575741</span>,
+    <span class='number'>0x15a8412abd151554</span>, <span class='number'>0x779fb6eee87777c1</span>, <span class='number'>0x37a5eb6e923737dc</span>, <span class='number'>0xe57b56d79ee5e5b3</span>,
+    <span class='number'>0x9f8cd923139f9f46</span>, <span class='number'>0xf0d317fd23f0f0e7</span>, <span class='number'>0x4a6a7f94204a4a35</span>, <span class='number'>0xda9e95a944dada4f</span>,
+    <span class='number'>0x58fa25b0a258587d</span>, <span class='number'>0xc906ca8fcfc9c903</span>, <span class='number'>0x29558d527c2929a4</span>, <span class='number'>0x0a5022145a0a0a28</span>,
+    <span class='number'>0xb1e14f7f50b1b1fe</span>, <span class='number'>0xa0691a5dc9a0a0ba</span>, <span class='number'>0x6b7fdad6146b6bb1</span>, <span class='number'>0x855cab17d985852e</span>,
+    <span class='number'>0xbd8173673cbdbdce</span>, <span class='number'>0x5dd234ba8f5d5d69</span>, <span class='number'>0x1080502090101040</span>, <span class='number'>0xf4f303f507f4f4f7</span>,
+    <span class='number'>0xcb16c08bddcbcb0b</span>, <span class='number'>0x3eedc67cd33e3ef8</span>, <span class='number'>0x0528110a2d050514</span>, <span class='number'>0x671fe6ce78676781</span>,
+    <span class='number'>0xe47353d597e4e4b7</span>, <span class='number'>0x2725bb4e0227279c</span>, <span class='number'>0x4132588273414119</span>, <span class='number'>0x8b2c9d0ba78b8b16</span>,
+    <span class='number'>0xa7510153f6a7a7a6</span>, <span class='number'>0x7dcf94fab27d7de9</span>, <span class='number'>0x95dcfb374995956e</span>, <span class='number'>0xd88e9fad56d8d847</span>,
+    <span class='number'>0xfb8b30eb70fbfbcb</span>, <span class='number'>0xee2371c1cdeeee9f</span>, <span class='number'>0x7cc791f8bb7c7ced</span>, <span class='number'>0x6617e3cc71666685</span>,
+    <span class='number'>0xdda68ea77bdddd53</span>, <span class='number'>0x17b84b2eaf17175c</span>, <span class='number'>0x4702468e45474701</span>, <span class='number'>0x9e84dc211a9e9e42</span>,
+    <span class='number'>0xca1ec589d4caca0f</span>, <span class='number'>0x2d75995a582d2db4</span>, <span class='number'>0xbf9179632ebfbfc6</span>, <span class='number'>0x07381b0e3f07071c</span>,
+    <span class='number'>0xad012347acadad8e</span>, <span class='number'>0x5aea2fb4b05a5a75</span>, <span class='number'>0x836cb51bef838336</span>, <span class='number'>0x3385ff66b63333cc</span>,
+    <span class='number'>0x633ff2c65c636391</span>, <span class='number'>0x02100a0412020208</span>, <span class='number'>0xaa39384993aaaa92</span>, <span class='number'>0x71afa8e2de7171d9</span>,
+    <span class='number'>0xc80ecf8dc6c8c807</span>, <span class='number'>0x19c87d32d1191964</span>, <span class='number'>0x497270923b494939</span>, <span class='number'>0xd9869aaf5fd9d943</span>,
+    <span class='number'>0xf2c31df931f2f2ef</span>, <span class='number'>0xe34b48dba8e3e3ab</span>, <span class='number'>0x5be22ab6b95b5b71</span>, <span class='number'>0x8834920dbc88881a</span>,
+    <span class='number'>0x9aa4c8293e9a9a52</span>, <span class='number'>0x262dbe4c0b262698</span>, <span class='number'>0x328dfa64bf3232c8</span>, <span class='number'>0xb0e94a7d59b0b0fa</span>,
+    <span class='number'>0xe91b6acff2e9e983</span>, <span class='number'>0x0f78331e770f0f3c</span>, <span class='number'>0xd5e6a6b733d5d573</span>, <span class='number'>0x8074ba1df480803a</span>,
+    <span class='number'>0xbe997c6127bebec2</span>, <span class='number'>0xcd26de87ebcdcd13</span>, <span class='number'>0x34bde468893434d0</span>, <span class='number'>0x487a75903248483d</span>,
+    <span class='number'>0xffab24e354ffffdb</span>, <span class='number'>0x7af78ff48d7a7af5</span>, <span class='number'>0x90f4ea3d6490907a</span>, <span class='number'>0x5fc23ebe9d5f5f61</span>,
+    <span class='number'>0x201da0403d202080</span>, <span class='number'>0x6867d5d00f6868bd</span>, <span class='number'>0x1ad07234ca1a1a68</span>, <span class='number'>0xae192c41b7aeae82</span>,
+    <span class='number'>0xb4c95e757db4b4ea</span>, <span class='number'>0x549a19a8ce54544d</span>, <span class='number'>0x93ece53b7f939376</span>, <span class='number'>0x220daa442f222288</span>,
+    <span class='number'>0x6407e9c86364648d</span>, <span class='number'>0xf1db12ff2af1f1e3</span>, <span class='number'>0x73bfa2e6cc7373d1</span>, <span class='number'>0x12905a2482121248</span>,
+    <span class='number'>0x403a5d807a40401d</span>, <span class='number'>0x0840281048080820</span>, <span class='number'>0xc356e89b95c3c32b</span>, <span class='number'>0xec337bc5dfecec97</span>,
+    <span class='number'>0xdb9690ab4ddbdb4b</span>, <span class='number'>0xa1611f5fc0a1a1be</span>, <span class='number'>0x8d1c8307918d8d0e</span>, <span class='number'>0x3df5c97ac83d3df4</span>,
+    <span class='number'>0x97ccf1335b979766</span>, <span class='number'>0x0000000000000000</span>, <span class='number'>0xcf36d483f9cfcf1b</span>, <span class='number'>0x2b4587566e2b2bac</span>,
+    <span class='number'>0x7697b3ece17676c5</span>, <span class='number'>0x8264b019e6828232</span>, <span class='number'>0xd6fea9b128d6d67f</span>, <span class='number'>0x1bd87736c31b1b6c</span>,
+    <span class='number'>0xb5c15b7774b5b5ee</span>, <span class='number'>0xaf112943beafaf86</span>, <span class='number'>0x6a77dfd41d6a6ab5</span>, <span class='number'>0x50ba0da0ea50505d</span>,
+    <span class='number'>0x45124c8a57454509</span>, <span class='number'>0xf3cb18fb38f3f3eb</span>, <span class='number'>0x309df060ad3030c0</span>, <span class='number'>0xef2b74c3c4efef9b</span>,
+    <span class='number'>0x3fe5c37eda3f3ffc</span>, <span class='number'>0x55921caac7555549</span>, <span class='number'>0xa2791059dba2a2b2</span>, <span class='number'>0xea0365c9e9eaea8f</span>,
+    <span class='number'>0x650fecca6a656589</span>, <span class='number'>0xbab9686903babad2</span>, <span class='number'>0x2f65935e4a2f2fbc</span>, <span class='number'>0xc04ee79d8ec0c027</span>,
+    <span class='number'>0xdebe81a160dede5f</span>, <span class='number'>0x1ce06c38fc1c1c70</span>, <span class='number'>0xfdbb2ee746fdfdd3</span>, <span class='number'>0x4d52649a1f4d4d29</span>,
+    <span class='number'>0x92e4e03976929272</span>, <span class='number'>0x758fbceafa7575c9</span>, <span class='number'>0x06301e0c36060618</span>, <span class='number'>0x8a249809ae8a8a12</span>,
+    <span class='number'>0xb2f940794bb2b2f2</span>, <span class='number'>0xe66359d185e6e6bf</span>, <span class='number'>0x0e70361c7e0e0e38</span>, <span class='number'>0x1ff8633ee71f1f7c</span>,
+    <span class='number'>0x6237f7c455626295</span>, <span class='number'>0xd4eea3b53ad4d477</span>, <span class='number'>0xa829324d81a8a89a</span>, <span class='number'>0x96c4f43152969662</span>,
+    <span class='number'>0xf99b3aef62f9f9c3</span>, <span class='number'>0xc566f697a3c5c533</span>, <span class='number'>0x2535b14a10252594</span>, <span class='number'>0x59f220b2ab595979</span>,
+    <span class='number'>0x8454ae15d084842a</span>, <span class='number'>0x72b7a7e4c57272d5</span>, <span class='number'>0x39d5dd72ec3939e4</span>, <span class='number'>0x4c5a6198164c4c2d</span>,
+    <span class='number'>0x5eca3bbc945e5e65</span>, <span class='number'>0x78e785f09f7878fd</span>, <span class='number'>0x38ddd870e53838e0</span>, <span class='number'>0x8c148605988c8c0a</span>,
+    <span class='number'>0xd1c6b2bf17d1d163</span>, <span class='number'>0xa5410b57e4a5a5ae</span>, <span class='number'>0xe2434dd9a1e2e2af</span>, <span class='number'>0x612ff8c24e616199</span>,
+    <span class='number'>0xb3f1457b42b3b3f6</span>, <span class='number'>0x2115a54234212184</span>, <span class='number'>0x9c94d625089c9c4a</span>, <span class='number'>0x1ef0663cee1e1e78</span>,
+    <span class='number'>0x4322528661434311</span>, <span class='number'>0xc776fc93b1c7c73b</span>, <span class='number'>0xfcb32be54ffcfcd7</span>, <span class='number'>0x0420140824040410</span>,
+    <span class='number'>0x51b208a2e3515159</span>, <span class='number'>0x99bcc72f2599995e</span>, <span class='number'>0x6d4fc4da226d6da9</span>, <span class='number'>0x0d68391a650d0d34</span>,
+    <span class='number'>0xfa8335e979fafacf</span>, <span class='number'>0xdfb684a369dfdf5b</span>, <span class='number'>0x7ed79bfca97e7ee5</span>, <span class='number'>0x243db44819242490</span>,
+    <span class='number'>0x3bc5d776fe3b3bec</span>, <span class='number'>0xab313d4b9aabab96</span>, <span class='number'>0xce3ed181f0cece1f</span>, <span class='number'>0x1188552299111144</span>,
+    <span class='number'>0x8f0c8903838f8f06</span>, <span class='number'>0x4e4a6b9c044e4e25</span>, <span class='number'>0xb7d1517366b7b7e6</span>, <span class='number'>0xeb0b60cbe0ebeb8b</span>,
+    <span class='number'>0x3cfdcc78c13c3cf0</span>, <span class='number'>0x817cbf1ffd81813e</span>, <span class='number'>0x94d4fe354094946a</span>, <span class='number'>0xf7eb0cf31cf7f7fb</span>,
+    <span class='number'>0xb9a1676f18b9b9de</span>, <span class='number'>0x13985f268b13134c</span>, <span class='number'>0x2c7d9c58512c2cb0</span>, <span class='number'>0xd3d6b8bb05d3d36b</span>,
+    <span class='number'>0xe76b5cd38ce7e7bb</span>, <span class='number'>0x6e57cbdc396e6ea5</span>, <span class='number'>0xc46ef395aac4c437</span>, <span class='number'>0x03180f061b03030c</span>,
+    <span class='number'>0x568a13acdc565645</span>, <span class='number'>0x441a49885e44440d</span>, <span class='number'>0x7fdf9efea07f7fe1</span>, <span class='number'>0xa921374f88a9a99e</span>,
+    <span class='number'>0x2a4d8254672a2aa8</span>, <span class='number'>0xbbb16d6b0abbbbd6</span>, <span class='number'>0xc146e29f87c1c123</span>, <span class='number'>0x53a202a6f1535351</span>,
+    <span class='number'>0xdcae8ba572dcdc57</span>, <span class='number'>0x0b582716530b0b2c</span>, <span class='number'>0x9d9cd327019d9d4e</span>, <span class='number'>0x6c47c1d82b6c6cad</span>,
+    <span class='number'>0x3195f562a43131c4</span>, <span class='number'>0x7487b9e8f37474cd</span>, <span class='number'>0xf6e309f115f6f6ff</span>, <span class='number'>0x460a438c4c464605</span>,
+    <span class='number'>0xac092645a5acac8a</span>, <span class='number'>0x893c970fb589891e</span>, <span class='number'>0x14a04428b4141450</span>, <span class='number'>0xe15b42dfbae1e1a3</span>,
+    <span class='number'>0x16b04e2ca6161658</span>, <span class='number'>0x3acdd274f73a3ae8</span>, <span class='number'>0x696fd0d2066969b9</span>, <span class='number'>0x09482d1241090924</span>,
+    <span class='number'>0x70a7ade0d77070dd</span>, <span class='number'>0xb6d954716fb6b6e2</span>, <span class='number'>0xd0ceb7bd1ed0d067</span>, <span class='number'>0xed3b7ec7d6eded93</span>,
+    <span class='number'>0xcc2edb85e2cccc17</span>, <span class='number'>0x422a578468424215</span>, <span class='number'>0x98b4c22d2c98985a</span>, <span class='number'>0xa4490e55eda4a4aa</span>,
+    <span class='number'>0x285d8850752828a0</span>, <span class='number'>0x5cda31b8865c5c6d</span>, <span class='number'>0xf8933fed6bf8f8c7</span>, <span class='number'>0x8644a411c2868622</span>,
+];
+
+<span class='kw'>static</span> <span class='ident'>C6</span>: [<span class='ident'>u64</span>; <span class='number'>256</span>] <span class='op'>=</span> [
+    <span class='number'>0x6018c07830d81818</span>, <span class='number'>0x8c2305af46262323</span>, <span class='number'>0x3fc67ef991b8c6c6</span>, <span class='number'>0x87e8136fcdfbe8e8</span>,
+    <span class='number'>0x26874ca113cb8787</span>, <span class='number'>0xdab8a9626d11b8b8</span>, <span class='number'>0x0401080502090101</span>, <span class='number'>0x214f426e9e0d4f4f</span>,
+    <span class='number'>0xd836adee6c9b3636</span>, <span class='number'>0xa2a6590451ffa6a6</span>, <span class='number'>0x6fd2debdb90cd2d2</span>, <span class='number'>0xf3f5fb06f70ef5f5</span>,
+    <span class='number'>0xf979ef80f2967979</span>, <span class='number'>0xa16f5fcede306f6f</span>, <span class='number'>0x7e91fcef3f6d9191</span>, <span class='number'>0x5552aa07a4f85252</span>,
+    <span class='number'>0x9d6027fdc0476060</span>, <span class='number'>0xcabc89766535bcbc</span>, <span class='number'>0x569baccd2b379b9b</span>, <span class='number'>0x028e048c018a8e8e</span>,
+    <span class='number'>0xb6a371155bd2a3a3</span>, <span class='number'>0x300c603c186c0c0c</span>, <span class='number'>0xf17bff8af6847b7b</span>, <span class='number'>0xd435b5e16a803535</span>,
+    <span class='number'>0x741de8693af51d1d</span>, <span class='number'>0xa7e05347ddb3e0e0</span>, <span class='number'>0x7bd7f6acb321d7d7</span>, <span class='number'>0x2fc25eed999cc2c2</span>,
+    <span class='number'>0xb82e6d965c432e2e</span>, <span class='number'>0x314b627a96294b4b</span>, <span class='number'>0xdffea321e15dfefe</span>, <span class='number'>0x41578216aed55757</span>,
+    <span class='number'>0x5415a8412abd1515</span>, <span class='number'>0xc1779fb6eee87777</span>, <span class='number'>0xdc37a5eb6e923737</span>, <span class='number'>0xb3e57b56d79ee5e5</span>,
+    <span class='number'>0x469f8cd923139f9f</span>, <span class='number'>0xe7f0d317fd23f0f0</span>, <span class='number'>0x354a6a7f94204a4a</span>, <span class='number'>0x4fda9e95a944dada</span>,
+    <span class='number'>0x7d58fa25b0a25858</span>, <span class='number'>0x03c906ca8fcfc9c9</span>, <span class='number'>0xa429558d527c2929</span>, <span class='number'>0x280a5022145a0a0a</span>,
+    <span class='number'>0xfeb1e14f7f50b1b1</span>, <span class='number'>0xbaa0691a5dc9a0a0</span>, <span class='number'>0xb16b7fdad6146b6b</span>, <span class='number'>0x2e855cab17d98585</span>,
+    <span class='number'>0xcebd8173673cbdbd</span>, <span class='number'>0x695dd234ba8f5d5d</span>, <span class='number'>0x4010805020901010</span>, <span class='number'>0xf7f4f303f507f4f4</span>,
+    <span class='number'>0x0bcb16c08bddcbcb</span>, <span class='number'>0xf83eedc67cd33e3e</span>, <span class='number'>0x140528110a2d0505</span>, <span class='number'>0x81671fe6ce786767</span>,
+    <span class='number'>0xb7e47353d597e4e4</span>, <span class='number'>0x9c2725bb4e022727</span>, <span class='number'>0x1941325882734141</span>, <span class='number'>0x168b2c9d0ba78b8b</span>,
+    <span class='number'>0xa6a7510153f6a7a7</span>, <span class='number'>0xe97dcf94fab27d7d</span>, <span class='number'>0x6e95dcfb37499595</span>, <span class='number'>0x47d88e9fad56d8d8</span>,
+    <span class='number'>0xcbfb8b30eb70fbfb</span>, <span class='number'>0x9fee2371c1cdeeee</span>, <span class='number'>0xed7cc791f8bb7c7c</span>, <span class='number'>0x856617e3cc716666</span>,
+    <span class='number'>0x53dda68ea77bdddd</span>, <span class='number'>0x5c17b84b2eaf1717</span>, <span class='number'>0x014702468e454747</span>, <span class='number'>0x429e84dc211a9e9e</span>,
+    <span class='number'>0x0fca1ec589d4caca</span>, <span class='number'>0xb42d75995a582d2d</span>, <span class='number'>0xc6bf9179632ebfbf</span>, <span class='number'>0x1c07381b0e3f0707</span>,
+    <span class='number'>0x8ead012347acadad</span>, <span class='number'>0x755aea2fb4b05a5a</span>, <span class='number'>0x36836cb51bef8383</span>, <span class='number'>0xcc3385ff66b63333</span>,
+    <span class='number'>0x91633ff2c65c6363</span>, <span class='number'>0x0802100a04120202</span>, <span class='number'>0x92aa39384993aaaa</span>, <span class='number'>0xd971afa8e2de7171</span>,
+    <span class='number'>0x07c80ecf8dc6c8c8</span>, <span class='number'>0x6419c87d32d11919</span>, <span class='number'>0x39497270923b4949</span>, <span class='number'>0x43d9869aaf5fd9d9</span>,
+    <span class='number'>0xeff2c31df931f2f2</span>, <span class='number'>0xabe34b48dba8e3e3</span>, <span class='number'>0x715be22ab6b95b5b</span>, <span class='number'>0x1a8834920dbc8888</span>,
+    <span class='number'>0x529aa4c8293e9a9a</span>, <span class='number'>0x98262dbe4c0b2626</span>, <span class='number'>0xc8328dfa64bf3232</span>, <span class='number'>0xfab0e94a7d59b0b0</span>,
+    <span class='number'>0x83e91b6acff2e9e9</span>, <span class='number'>0x3c0f78331e770f0f</span>, <span class='number'>0x73d5e6a6b733d5d5</span>, <span class='number'>0x3a8074ba1df48080</span>,
+    <span class='number'>0xc2be997c6127bebe</span>, <span class='number'>0x13cd26de87ebcdcd</span>, <span class='number'>0xd034bde468893434</span>, <span class='number'>0x3d487a7590324848</span>,
+    <span class='number'>0xdbffab24e354ffff</span>, <span class='number'>0xf57af78ff48d7a7a</span>, <span class='number'>0x7a90f4ea3d649090</span>, <span class='number'>0x615fc23ebe9d5f5f</span>,
+    <span class='number'>0x80201da0403d2020</span>, <span class='number'>0xbd6867d5d00f6868</span>, <span class='number'>0x681ad07234ca1a1a</span>, <span class='number'>0x82ae192c41b7aeae</span>,
+    <span class='number'>0xeab4c95e757db4b4</span>, <span class='number'>0x4d549a19a8ce5454</span>, <span class='number'>0x7693ece53b7f9393</span>, <span class='number'>0x88220daa442f2222</span>,
+    <span class='number'>0x8d6407e9c8636464</span>, <span class='number'>0xe3f1db12ff2af1f1</span>, <span class='number'>0xd173bfa2e6cc7373</span>, <span class='number'>0x4812905a24821212</span>,
+    <span class='number'>0x1d403a5d807a4040</span>, <span class='number'>0x2008402810480808</span>, <span class='number'>0x2bc356e89b95c3c3</span>, <span class='number'>0x97ec337bc5dfecec</span>,
+    <span class='number'>0x4bdb9690ab4ddbdb</span>, <span class='number'>0xbea1611f5fc0a1a1</span>, <span class='number'>0x0e8d1c8307918d8d</span>, <span class='number'>0xf43df5c97ac83d3d</span>,
+    <span class='number'>0x6697ccf1335b9797</span>, <span class='number'>0x0000000000000000</span>, <span class='number'>0x1bcf36d483f9cfcf</span>, <span class='number'>0xac2b4587566e2b2b</span>,
+    <span class='number'>0xc57697b3ece17676</span>, <span class='number'>0x328264b019e68282</span>, <span class='number'>0x7fd6fea9b128d6d6</span>, <span class='number'>0x6c1bd87736c31b1b</span>,
+    <span class='number'>0xeeb5c15b7774b5b5</span>, <span class='number'>0x86af112943beafaf</span>, <span class='number'>0xb56a77dfd41d6a6a</span>, <span class='number'>0x5d50ba0da0ea5050</span>,
+    <span class='number'>0x0945124c8a574545</span>, <span class='number'>0xebf3cb18fb38f3f3</span>, <span class='number'>0xc0309df060ad3030</span>, <span class='number'>0x9bef2b74c3c4efef</span>,
+    <span class='number'>0xfc3fe5c37eda3f3f</span>, <span class='number'>0x4955921caac75555</span>, <span class='number'>0xb2a2791059dba2a2</span>, <span class='number'>0x8fea0365c9e9eaea</span>,
+    <span class='number'>0x89650fecca6a6565</span>, <span class='number'>0xd2bab9686903baba</span>, <span class='number'>0xbc2f65935e4a2f2f</span>, <span class='number'>0x27c04ee79d8ec0c0</span>,
+    <span class='number'>0x5fdebe81a160dede</span>, <span class='number'>0x701ce06c38fc1c1c</span>, <span class='number'>0xd3fdbb2ee746fdfd</span>, <span class='number'>0x294d52649a1f4d4d</span>,
+    <span class='number'>0x7292e4e039769292</span>, <span class='number'>0xc9758fbceafa7575</span>, <span class='number'>0x1806301e0c360606</span>, <span class='number'>0x128a249809ae8a8a</span>,
+    <span class='number'>0xf2b2f940794bb2b2</span>, <span class='number'>0xbfe66359d185e6e6</span>, <span class='number'>0x380e70361c7e0e0e</span>, <span class='number'>0x7c1ff8633ee71f1f</span>,
+    <span class='number'>0x956237f7c4556262</span>, <span class='number'>0x77d4eea3b53ad4d4</span>, <span class='number'>0x9aa829324d81a8a8</span>, <span class='number'>0x6296c4f431529696</span>,
+    <span class='number'>0xc3f99b3aef62f9f9</span>, <span class='number'>0x33c566f697a3c5c5</span>, <span class='number'>0x942535b14a102525</span>, <span class='number'>0x7959f220b2ab5959</span>,
+    <span class='number'>0x2a8454ae15d08484</span>, <span class='number'>0xd572b7a7e4c57272</span>, <span class='number'>0xe439d5dd72ec3939</span>, <span class='number'>0x2d4c5a6198164c4c</span>,
+    <span class='number'>0x655eca3bbc945e5e</span>, <span class='number'>0xfd78e785f09f7878</span>, <span class='number'>0xe038ddd870e53838</span>, <span class='number'>0x0a8c148605988c8c</span>,
+    <span class='number'>0x63d1c6b2bf17d1d1</span>, <span class='number'>0xaea5410b57e4a5a5</span>, <span class='number'>0xafe2434dd9a1e2e2</span>, <span class='number'>0x99612ff8c24e6161</span>,
+    <span class='number'>0xf6b3f1457b42b3b3</span>, <span class='number'>0x842115a542342121</span>, <span class='number'>0x4a9c94d625089c9c</span>, <span class='number'>0x781ef0663cee1e1e</span>,
+    <span class='number'>0x1143225286614343</span>, <span class='number'>0x3bc776fc93b1c7c7</span>, <span class='number'>0xd7fcb32be54ffcfc</span>, <span class='number'>0x1004201408240404</span>,
+    <span class='number'>0x5951b208a2e35151</span>, <span class='number'>0x5e99bcc72f259999</span>, <span class='number'>0xa96d4fc4da226d6d</span>, <span class='number'>0x340d68391a650d0d</span>,
+    <span class='number'>0xcffa8335e979fafa</span>, <span class='number'>0x5bdfb684a369dfdf</span>, <span class='number'>0xe57ed79bfca97e7e</span>, <span class='number'>0x90243db448192424</span>,
+    <span class='number'>0xec3bc5d776fe3b3b</span>, <span class='number'>0x96ab313d4b9aabab</span>, <span class='number'>0x1fce3ed181f0cece</span>, <span class='number'>0x4411885522991111</span>,
+    <span class='number'>0x068f0c8903838f8f</span>, <span class='number'>0x254e4a6b9c044e4e</span>, <span class='number'>0xe6b7d1517366b7b7</span>, <span class='number'>0x8beb0b60cbe0ebeb</span>,
+    <span class='number'>0xf03cfdcc78c13c3c</span>, <span class='number'>0x3e817cbf1ffd8181</span>, <span class='number'>0x6a94d4fe35409494</span>, <span class='number'>0xfbf7eb0cf31cf7f7</span>,
+    <span class='number'>0xdeb9a1676f18b9b9</span>, <span class='number'>0x4c13985f268b1313</span>, <span class='number'>0xb02c7d9c58512c2c</span>, <span class='number'>0x6bd3d6b8bb05d3d3</span>,
+    <span class='number'>0xbbe76b5cd38ce7e7</span>, <span class='number'>0xa56e57cbdc396e6e</span>, <span class='number'>0x37c46ef395aac4c4</span>, <span class='number'>0x0c03180f061b0303</span>,
+    <span class='number'>0x45568a13acdc5656</span>, <span class='number'>0x0d441a49885e4444</span>, <span class='number'>0xe17fdf9efea07f7f</span>, <span class='number'>0x9ea921374f88a9a9</span>,
+    <span class='number'>0xa82a4d8254672a2a</span>, <span class='number'>0xd6bbb16d6b0abbbb</span>, <span class='number'>0x23c146e29f87c1c1</span>, <span class='number'>0x5153a202a6f15353</span>,
+    <span class='number'>0x57dcae8ba572dcdc</span>, <span class='number'>0x2c0b582716530b0b</span>, <span class='number'>0x4e9d9cd327019d9d</span>, <span class='number'>0xad6c47c1d82b6c6c</span>,
+    <span class='number'>0xc43195f562a43131</span>, <span class='number'>0xcd7487b9e8f37474</span>, <span class='number'>0xfff6e309f115f6f6</span>, <span class='number'>0x05460a438c4c4646</span>,
+    <span class='number'>0x8aac092645a5acac</span>, <span class='number'>0x1e893c970fb58989</span>, <span class='number'>0x5014a04428b41414</span>, <span class='number'>0xa3e15b42dfbae1e1</span>,
+    <span class='number'>0x5816b04e2ca61616</span>, <span class='number'>0xe83acdd274f73a3a</span>, <span class='number'>0xb9696fd0d2066969</span>, <span class='number'>0x2409482d12410909</span>,
+    <span class='number'>0xdd70a7ade0d77070</span>, <span class='number'>0xe2b6d954716fb6b6</span>, <span class='number'>0x67d0ceb7bd1ed0d0</span>, <span class='number'>0x93ed3b7ec7d6eded</span>,
+    <span class='number'>0x17cc2edb85e2cccc</span>, <span class='number'>0x15422a5784684242</span>, <span class='number'>0x5a98b4c22d2c9898</span>, <span class='number'>0xaaa4490e55eda4a4</span>,
+    <span class='number'>0xa0285d8850752828</span>, <span class='number'>0x6d5cda31b8865c5c</span>, <span class='number'>0xc7f8933fed6bf8f8</span>, <span class='number'>0x228644a411c28686</span>,
+];
+
+<span class='kw'>static</span> <span class='ident'>C7</span>: [<span class='ident'>u64</span>; <span class='number'>256</span>] <span class='op'>=</span> [
+    <span class='number'>0x186018c07830d818</span>, <span class='number'>0x238c2305af462623</span>, <span class='number'>0xc63fc67ef991b8c6</span>, <span class='number'>0xe887e8136fcdfbe8</span>,
+    <span class='number'>0x8726874ca113cb87</span>, <span class='number'>0xb8dab8a9626d11b8</span>, <span class='number'>0x0104010805020901</span>, <span class='number'>0x4f214f426e9e0d4f</span>,
+    <span class='number'>0x36d836adee6c9b36</span>, <span class='number'>0xa6a2a6590451ffa6</span>, <span class='number'>0xd26fd2debdb90cd2</span>, <span class='number'>0xf5f3f5fb06f70ef5</span>,
+    <span class='number'>0x79f979ef80f29679</span>, <span class='number'>0x6fa16f5fcede306f</span>, <span class='number'>0x917e91fcef3f6d91</span>, <span class='number'>0x525552aa07a4f852</span>,
+    <span class='number'>0x609d6027fdc04760</span>, <span class='number'>0xbccabc89766535bc</span>, <span class='number'>0x9b569baccd2b379b</span>, <span class='number'>0x8e028e048c018a8e</span>,
+    <span class='number'>0xa3b6a371155bd2a3</span>, <span class='number'>0x0c300c603c186c0c</span>, <span class='number'>0x7bf17bff8af6847b</span>, <span class='number'>0x35d435b5e16a8035</span>,
+    <span class='number'>0x1d741de8693af51d</span>, <span class='number'>0xe0a7e05347ddb3e0</span>, <span class='number'>0xd77bd7f6acb321d7</span>, <span class='number'>0xc22fc25eed999cc2</span>,
+    <span class='number'>0x2eb82e6d965c432e</span>, <span class='number'>0x4b314b627a96294b</span>, <span class='number'>0xfedffea321e15dfe</span>, <span class='number'>0x5741578216aed557</span>,
+    <span class='number'>0x155415a8412abd15</span>, <span class='number'>0x77c1779fb6eee877</span>, <span class='number'>0x37dc37a5eb6e9237</span>, <span class='number'>0xe5b3e57b56d79ee5</span>,
+    <span class='number'>0x9f469f8cd923139f</span>, <span class='number'>0xf0e7f0d317fd23f0</span>, <span class='number'>0x4a354a6a7f94204a</span>, <span class='number'>0xda4fda9e95a944da</span>,
+    <span class='number'>0x587d58fa25b0a258</span>, <span class='number'>0xc903c906ca8fcfc9</span>, <span class='number'>0x29a429558d527c29</span>, <span class='number'>0x0a280a5022145a0a</span>,
+    <span class='number'>0xb1feb1e14f7f50b1</span>, <span class='number'>0xa0baa0691a5dc9a0</span>, <span class='number'>0x6bb16b7fdad6146b</span>, <span class='number'>0x852e855cab17d985</span>,
+    <span class='number'>0xbdcebd8173673cbd</span>, <span class='number'>0x5d695dd234ba8f5d</span>, <span class='number'>0x1040108050209010</span>, <span class='number'>0xf4f7f4f303f507f4</span>,
+    <span class='number'>0xcb0bcb16c08bddcb</span>, <span class='number'>0x3ef83eedc67cd33e</span>, <span class='number'>0x05140528110a2d05</span>, <span class='number'>0x6781671fe6ce7867</span>,
+    <span class='number'>0xe4b7e47353d597e4</span>, <span class='number'>0x279c2725bb4e0227</span>, <span class='number'>0x4119413258827341</span>, <span class='number'>0x8b168b2c9d0ba78b</span>,
+    <span class='number'>0xa7a6a7510153f6a7</span>, <span class='number'>0x7de97dcf94fab27d</span>, <span class='number'>0x956e95dcfb374995</span>, <span class='number'>0xd847d88e9fad56d8</span>,
+    <span class='number'>0xfbcbfb8b30eb70fb</span>, <span class='number'>0xee9fee2371c1cdee</span>, <span class='number'>0x7ced7cc791f8bb7c</span>, <span class='number'>0x66856617e3cc7166</span>,
+    <span class='number'>0xdd53dda68ea77bdd</span>, <span class='number'>0x175c17b84b2eaf17</span>, <span class='number'>0x47014702468e4547</span>, <span class='number'>0x9e429e84dc211a9e</span>,
+    <span class='number'>0xca0fca1ec589d4ca</span>, <span class='number'>0x2db42d75995a582d</span>, <span class='number'>0xbfc6bf9179632ebf</span>, <span class='number'>0x071c07381b0e3f07</span>,
+    <span class='number'>0xad8ead012347acad</span>, <span class='number'>0x5a755aea2fb4b05a</span>, <span class='number'>0x8336836cb51bef83</span>, <span class='number'>0x33cc3385ff66b633</span>,
+    <span class='number'>0x6391633ff2c65c63</span>, <span class='number'>0x020802100a041202</span>, <span class='number'>0xaa92aa39384993aa</span>, <span class='number'>0x71d971afa8e2de71</span>,
+    <span class='number'>0xc807c80ecf8dc6c8</span>, <span class='number'>0x196419c87d32d119</span>, <span class='number'>0x4939497270923b49</span>, <span class='number'>0xd943d9869aaf5fd9</span>,
+    <span class='number'>0xf2eff2c31df931f2</span>, <span class='number'>0xe3abe34b48dba8e3</span>, <span class='number'>0x5b715be22ab6b95b</span>, <span class='number'>0x881a8834920dbc88</span>,
+    <span class='number'>0x9a529aa4c8293e9a</span>, <span class='number'>0x2698262dbe4c0b26</span>, <span class='number'>0x32c8328dfa64bf32</span>, <span class='number'>0xb0fab0e94a7d59b0</span>,
+    <span class='number'>0xe983e91b6acff2e9</span>, <span class='number'>0x0f3c0f78331e770f</span>, <span class='number'>0xd573d5e6a6b733d5</span>, <span class='number'>0x803a8074ba1df480</span>,
+    <span class='number'>0xbec2be997c6127be</span>, <span class='number'>0xcd13cd26de87ebcd</span>, <span class='number'>0x34d034bde4688934</span>, <span class='number'>0x483d487a75903248</span>,
+    <span class='number'>0xffdbffab24e354ff</span>, <span class='number'>0x7af57af78ff48d7a</span>, <span class='number'>0x907a90f4ea3d6490</span>, <span class='number'>0x5f615fc23ebe9d5f</span>,
+    <span class='number'>0x2080201da0403d20</span>, <span class='number'>0x68bd6867d5d00f68</span>, <span class='number'>0x1a681ad07234ca1a</span>, <span class='number'>0xae82ae192c41b7ae</span>,
+    <span class='number'>0xb4eab4c95e757db4</span>, <span class='number'>0x544d549a19a8ce54</span>, <span class='number'>0x937693ece53b7f93</span>, <span class='number'>0x2288220daa442f22</span>,
+    <span class='number'>0x648d6407e9c86364</span>, <span class='number'>0xf1e3f1db12ff2af1</span>, <span class='number'>0x73d173bfa2e6cc73</span>, <span class='number'>0x124812905a248212</span>,
+    <span class='number'>0x401d403a5d807a40</span>, <span class='number'>0x0820084028104808</span>, <span class='number'>0xc32bc356e89b95c3</span>, <span class='number'>0xec97ec337bc5dfec</span>,
+    <span class='number'>0xdb4bdb9690ab4ddb</span>, <span class='number'>0xa1bea1611f5fc0a1</span>, <span class='number'>0x8d0e8d1c8307918d</span>, <span class='number'>0x3df43df5c97ac83d</span>,
+    <span class='number'>0x976697ccf1335b97</span>, <span class='number'>0x0000000000000000</span>, <span class='number'>0xcf1bcf36d483f9cf</span>, <span class='number'>0x2bac2b4587566e2b</span>,
+    <span class='number'>0x76c57697b3ece176</span>, <span class='number'>0x82328264b019e682</span>, <span class='number'>0xd67fd6fea9b128d6</span>, <span class='number'>0x1b6c1bd87736c31b</span>,
+    <span class='number'>0xb5eeb5c15b7774b5</span>, <span class='number'>0xaf86af112943beaf</span>, <span class='number'>0x6ab56a77dfd41d6a</span>, <span class='number'>0x505d50ba0da0ea50</span>,
+    <span class='number'>0x450945124c8a5745</span>, <span class='number'>0xf3ebf3cb18fb38f3</span>, <span class='number'>0x30c0309df060ad30</span>, <span class='number'>0xef9bef2b74c3c4ef</span>,
+    <span class='number'>0x3ffc3fe5c37eda3f</span>, <span class='number'>0x554955921caac755</span>, <span class='number'>0xa2b2a2791059dba2</span>, <span class='number'>0xea8fea0365c9e9ea</span>,
+    <span class='number'>0x6589650fecca6a65</span>, <span class='number'>0xbad2bab9686903ba</span>, <span class='number'>0x2fbc2f65935e4a2f</span>, <span class='number'>0xc027c04ee79d8ec0</span>,
+    <span class='number'>0xde5fdebe81a160de</span>, <span class='number'>0x1c701ce06c38fc1c</span>, <span class='number'>0xfdd3fdbb2ee746fd</span>, <span class='number'>0x4d294d52649a1f4d</span>,
+    <span class='number'>0x927292e4e0397692</span>, <span class='number'>0x75c9758fbceafa75</span>, <span class='number'>0x061806301e0c3606</span>, <span class='number'>0x8a128a249809ae8a</span>,
+    <span class='number'>0xb2f2b2f940794bb2</span>, <span class='number'>0xe6bfe66359d185e6</span>, <span class='number'>0x0e380e70361c7e0e</span>, <span class='number'>0x1f7c1ff8633ee71f</span>,
+    <span class='number'>0x62956237f7c45562</span>, <span class='number'>0xd477d4eea3b53ad4</span>, <span class='number'>0xa89aa829324d81a8</span>, <span class='number'>0x966296c4f4315296</span>,
+    <span class='number'>0xf9c3f99b3aef62f9</span>, <span class='number'>0xc533c566f697a3c5</span>, <span class='number'>0x25942535b14a1025</span>, <span class='number'>0x597959f220b2ab59</span>,
+    <span class='number'>0x842a8454ae15d084</span>, <span class='number'>0x72d572b7a7e4c572</span>, <span class='number'>0x39e439d5dd72ec39</span>, <span class='number'>0x4c2d4c5a6198164c</span>,
+    <span class='number'>0x5e655eca3bbc945e</span>, <span class='number'>0x78fd78e785f09f78</span>, <span class='number'>0x38e038ddd870e538</span>, <span class='number'>0x8c0a8c148605988c</span>,
+    <span class='number'>0xd163d1c6b2bf17d1</span>, <span class='number'>0xa5aea5410b57e4a5</span>, <span class='number'>0xe2afe2434dd9a1e2</span>, <span class='number'>0x6199612ff8c24e61</span>,
+    <span class='number'>0xb3f6b3f1457b42b3</span>, <span class='number'>0x21842115a5423421</span>, <span class='number'>0x9c4a9c94d625089c</span>, <span class='number'>0x1e781ef0663cee1e</span>,
+    <span class='number'>0x4311432252866143</span>, <span class='number'>0xc73bc776fc93b1c7</span>, <span class='number'>0xfcd7fcb32be54ffc</span>, <span class='number'>0x0410042014082404</span>,
+    <span class='number'>0x515951b208a2e351</span>, <span class='number'>0x995e99bcc72f2599</span>, <span class='number'>0x6da96d4fc4da226d</span>, <span class='number'>0x0d340d68391a650d</span>,
+    <span class='number'>0xfacffa8335e979fa</span>, <span class='number'>0xdf5bdfb684a369df</span>, <span class='number'>0x7ee57ed79bfca97e</span>, <span class='number'>0x2490243db4481924</span>,
+    <span class='number'>0x3bec3bc5d776fe3b</span>, <span class='number'>0xab96ab313d4b9aab</span>, <span class='number'>0xce1fce3ed181f0ce</span>, <span class='number'>0x1144118855229911</span>,
+    <span class='number'>0x8f068f0c8903838f</span>, <span class='number'>0x4e254e4a6b9c044e</span>, <span class='number'>0xb7e6b7d1517366b7</span>, <span class='number'>0xeb8beb0b60cbe0eb</span>,
+    <span class='number'>0x3cf03cfdcc78c13c</span>, <span class='number'>0x813e817cbf1ffd81</span>, <span class='number'>0x946a94d4fe354094</span>, <span class='number'>0xf7fbf7eb0cf31cf7</span>,
+    <span class='number'>0xb9deb9a1676f18b9</span>, <span class='number'>0x134c13985f268b13</span>, <span class='number'>0x2cb02c7d9c58512c</span>, <span class='number'>0xd36bd3d6b8bb05d3</span>,
+    <span class='number'>0xe7bbe76b5cd38ce7</span>, <span class='number'>0x6ea56e57cbdc396e</span>, <span class='number'>0xc437c46ef395aac4</span>, <span class='number'>0x030c03180f061b03</span>,
+    <span class='number'>0x5645568a13acdc56</span>, <span class='number'>0x440d441a49885e44</span>, <span class='number'>0x7fe17fdf9efea07f</span>, <span class='number'>0xa99ea921374f88a9</span>,
+    <span class='number'>0x2aa82a4d8254672a</span>, <span class='number'>0xbbd6bbb16d6b0abb</span>, <span class='number'>0xc123c146e29f87c1</span>, <span class='number'>0x535153a202a6f153</span>,
+    <span class='number'>0xdc57dcae8ba572dc</span>, <span class='number'>0x0b2c0b582716530b</span>, <span class='number'>0x9d4e9d9cd327019d</span>, <span class='number'>0x6cad6c47c1d82b6c</span>,
+    <span class='number'>0x31c43195f562a431</span>, <span class='number'>0x74cd7487b9e8f374</span>, <span class='number'>0xf6fff6e309f115f6</span>, <span class='number'>0x4605460a438c4c46</span>,
+    <span class='number'>0xac8aac092645a5ac</span>, <span class='number'>0x891e893c970fb589</span>, <span class='number'>0x145014a04428b414</span>, <span class='number'>0xe1a3e15b42dfbae1</span>,
+    <span class='number'>0x165816b04e2ca616</span>, <span class='number'>0x3ae83acdd274f73a</span>, <span class='number'>0x69b9696fd0d20669</span>, <span class='number'>0x092409482d124109</span>,
+    <span class='number'>0x70dd70a7ade0d770</span>, <span class='number'>0xb6e2b6d954716fb6</span>, <span class='number'>0xd067d0ceb7bd1ed0</span>, <span class='number'>0xed93ed3b7ec7d6ed</span>,
+    <span class='number'>0xcc17cc2edb85e2cc</span>, <span class='number'>0x4215422a57846842</span>, <span class='number'>0x985a98b4c22d2c98</span>, <span class='number'>0xa4aaa4490e55eda4</span>,
+    <span class='number'>0x28a0285d88507528</span>, <span class='number'>0x5c6d5cda31b8865c</span>, <span class='number'>0xf8c7f8933fed6bf8</span>, <span class='number'>0x86228644a411c286</span>,
+];
+</pre>
+</section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

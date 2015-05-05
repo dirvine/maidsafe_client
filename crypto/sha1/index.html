@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `sha1` mod in crate `crypto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, sha1">
+
+    <title>crypto::sha1 - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>crypto</a></p><script>window.sidebarCurrent = {name: 'sha1', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>crypto</a>::<wbr><a class='mod' href=''>sha1</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-91419' class='srclink' href='../../src/crypto/sha1.rs.html#11-581' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>An implementation of the SHA-1 cryptographic hash algorithm.</p>
+
+<p>To use this module, first create a <code>Sha1</code> object using the <code>Sha1</code> constructor,
+then feed it an input message using the <code>input</code> or <code>input_str</code> methods,
+which may be called any number of times; they will buffer the input until
+there is enough to call the block algorithm.</p>
+
+<p>After the entire input has been fed to the hash read the result using
+the <code>result</code> or <code>result_str</code> methods. The first will return bytes, and
+the second will return a <code>String</code> object of the same bytes represented
+in hexadecimal form.</p>
+
+<p>The <code>Sha1</code> object may be reused to create multiple hashes by calling
+the <code>reset()</code> method. These traits are implemented by all hash digest
+algorithms that implement the <code>Digest</code> trait. An example of use is:</p>
+<pre id='rust-example-rendered' class='rust '>
+<span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>crypto</span>::<span class='ident'>digest</span>::<span class='ident'>Digest</span>;
+<span class='kw'>use</span> <span class='self'>self</span>::<span class='ident'>crypto</span>::<span class='ident'>sha1</span>::<span class='ident'>Sha1</span>;
+
+<span class='comment'>// create a Sha1 object</span>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>hasher</span> <span class='op'>=</span> <span class='ident'>Sha1</span>::<span class='ident'>new</span>();
+
+<span class='comment'>// write input message</span>
+<span class='ident'>hasher</span>.<span class='ident'>input_str</span>(<span class='string'>&quot;hello world&quot;</span>);
+
+<span class='comment'>// read hash digest</span>
+<span class='kw'>let</span> <span class='ident'>hex</span> <span class='op'>=</span> <span class='ident'>hasher</span>.<span class='ident'>result_str</span>();
+
+<span class='macro'>assert_eq</span><span class='macro'>!</span>(<span class='ident'>hex</span>, <span class='string'>&quot;2aae6c35c94fcfb415dbe95f408b9ce91ee846ed&quot;</span>);
+</pre>
+
+<h1 id="mathematics" class='section-header'><a
+                           href="#mathematics">Mathematics</a></h1>
+<p>The mathematics of the SHA-1 algorithm are quite interesting. In its
+definition, The SHA-1 algorithm uses:</p>
+
+<ul>
+<li>1 binary operation on bit-arrays:
+
+<ul>
+<li>&quot;exclusive or&quot; (XOR)</li>
+</ul></li>
+<li>2 binary operations on integers:
+
+<ul>
+<li>&quot;addition&quot; (ADD)</li>
+<li>&quot;rotate left&quot; (ROL)</li>
+</ul></li>
+<li>3 ternary operations on bit-arrays:
+
+<ul>
+<li>&quot;choose&quot; (CH)</li>
+<li>&quot;parity&quot; (PAR)</li>
+<li>&quot;majority&quot; (MAJ)</li>
+</ul></li>
+</ul>
+
+<p>Some of these functions are commonly found in all hash digest
+algorithms, but some, like &quot;parity&quot; is only found in SHA-1.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.Sha1.html'
+                               title='crypto::sha1::Sha1'>Sha1</a></td>
+                        <td class='docblock short'>
+                             <p>Structure representing the state of a Sha1 computation</p>
+
+                        </td>
+                    </tr>
+                </table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.sha1_digest_block.html'
+                               title='crypto::sha1::sha1_digest_block'>sha1_digest_block</a></td>
+                        <td class='docblock short'>
+                             <p>Process a block with the SHA-1 algorithm. (See more...)</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.sha1_digest_block_u32.html'
+                               title='crypto::sha1::sha1_digest_block_u32'>sha1_digest_block_u32</a></td>
+                        <td class='docblock short'>
+                             <p>Process a block with the SHA-1 algorithm.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.sha1_digest_round_x4.html'
+                               title='crypto::sha1::sha1_digest_round_x4'>sha1_digest_round_x4</a></td>
+                        <td class='docblock short'>
+                             <p>Emulates <code>llvm.x86.sha1rnds4</code> intrinsic.
+Performs 4 rounds of the message block digest.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.sha1_first.html'
+                               title='crypto::sha1::sha1_first'>sha1_first</a></td>
+                        <td class='docblock short'>
+                             <p>Not an intrinsic, but gets the first element of a vector.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.sha1_first_add.html'
+                               title='crypto::sha1::sha1_first_add'>sha1_first_add</a></td>
+                        <td class='docblock short'>
+                             <p>Not an intrinsic, but adds a word to the first element of a vector.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.sha1_first_half.html'
+                               title='crypto::sha1::sha1_first_half'>sha1_first_half</a></td>
+                        <td class='docblock short'>
+                             <p>Emulates <code>llvm.x86.sha1nexte</code> intrinsic.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='fn' href='fn.sha1_schedule_x4.html'
+                               title='crypto::sha1::sha1_schedule_x4'>sha1_schedule_x4</a></td>
+                        <td class='docblock short'>
+                             <p>Performs 4 rounds of the message schedule update.</p>
+
+                        </td>
+                    </tr>
+                </table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

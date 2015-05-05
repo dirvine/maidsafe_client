@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `PaddingProcessor` trait in crate `crypto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, PaddingProcessor">
+
+    <title>crypto::blockmodes::PaddingProcessor - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>crypto</a>::<wbr><a href='index.html'>blockmodes</a></p><script>window.sidebarCurrent = {name: 'PaddingProcessor', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content trait">
+<h1 class='fqn'><span class='in-band'>Trait <a href='../index.html'>crypto</a>::<wbr><a href='index.html'>blockmodes</a>::<wbr><a class='trait' href=''>PaddingProcessor</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-25343' class='srclink' href='../../src/crypto/blockmodes.rs.html#32-41' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait PaddingProcessor {
+    fn <a href='#tymethod.pad_input' class='fnname'>pad_input</a>&lt;W: <a class='trait' href='../../crypto/buffer/trait.WriteBuffer.html' title='crypto::buffer::WriteBuffer'>WriteBuffer</a>&gt;(&amp;mut self, input_buffer: &amp;mut W);
+    fn <a href='#tymethod.strip_output' class='fnname'>strip_output</a>&lt;R: <a class='trait' href='../../crypto/buffer/trait.ReadBuffer.html' title='crypto::buffer::ReadBuffer'>ReadBuffer</a>&gt;(&amp;mut self, output_buffer: &amp;mut R) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>;
+}</pre><div class='docblock'><p>A PaddingProcessor handles adding or removing padding</p>
+</div>
+            <h2 id='required-methods'>Required Methods</h2>
+            <div class='methods'>
+        <h3 id='tymethod.pad_input' class='method stab '><code>fn <a href='#tymethod.pad_input' class='fnname'>pad_input</a>&lt;W: <a class='trait' href='../../crypto/buffer/trait.WriteBuffer.html' title='crypto::buffer::WriteBuffer'>WriteBuffer</a>&gt;(&amp;mut self, input_buffer: &amp;mut W)</code></h3><div class='docblock'><p>Add padding to the last block of input data
+If the mode can&#39;t handle a non-full block, it signals that error by simply leaving the block
+as it is which will be detected as an InvalidLength error.</p>
+</div><h3 id='tymethod.strip_output' class='method stab '><code>fn <a href='#tymethod.strip_output' class='fnname'>strip_output</a>&lt;R: <a class='trait' href='../../crypto/buffer/trait.ReadBuffer.html' title='crypto::buffer::ReadBuffer'>ReadBuffer</a>&gt;(&amp;mut self, output_buffer: &amp;mut R) -&gt; <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h3><div class='docblock'><p>Remove padding from the last block of output data
+If false is returned, the processing fails</p>
+</div></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    <li><code>impl <a class='trait' href='../../crypto/blockmodes/trait.PaddingProcessor.html' title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a> for <a class='struct' href='../../crypto/blockmodes/struct.NoPadding.html' title='crypto::blockmodes::NoPadding'>NoPadding</a></code></li>
+<li><code>impl <a class='trait' href='../../crypto/blockmodes/trait.PaddingProcessor.html' title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a> for <a class='struct' href='../../crypto/blockmodes/struct.PkcsPadding.html' title='crypto::blockmodes::PkcsPadding'>PkcsPadding</a></code></li>
+<li><code>impl&lt;X: <a class='trait' href='../../crypto/blockmodes/trait.PaddingProcessor.html' title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a>&gt; <a class='trait' href='../../crypto/blockmodes/trait.PaddingProcessor.html' title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a> for <a class='struct' href='../../crypto/blockmodes/struct.EncPadding.html' title='crypto::blockmodes::EncPadding'>EncPadding</a>&lt;X&gt;</code></li>
+<li><code>impl&lt;X: <a class='trait' href='../../crypto/blockmodes/trait.PaddingProcessor.html' title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a>&gt; <a class='trait' href='../../crypto/blockmodes/trait.PaddingProcessor.html' title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a> for <a class='struct' href='../../crypto/blockmodes/struct.DecPadding.html' title='crypto::blockmodes::DecPadding'>DecPadding</a>&lt;X&gt;</code></li>
+</ul><script type="text/javascript" async
+                              src="../../implementors/crypto/blockmodes/trait.PaddingProcessor.js">
+                      </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `sha1_digest_block` fn in crate `crypto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, sha1_digest_block">
+
+    <title>crypto::sha1::sha1_digest_block - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>crypto</a>::<wbr><a href='index.html'>sha1</a></p><script>window.sidebarCurrent = {name: 'sha1_digest_block', ty: 'fn', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content fn">
+<h1 class='fqn'><span class='in-band'>Function <a href='../index.html'>crypto</a>::<wbr><a href='index.html'>sha1</a>::<wbr><a class='fn' href=''>sha1_digest_block</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-92743' class='srclink' href='../../src/crypto/sha1.rs.html#348-353' title='goto source code'>[src]</a></span></h1>
+<pre class='rust fn'>pub fn sha1_digest_block(state: &amp;mut <a href='http://doc.rust-lang.org/nightly/std/primitive.array.html'>[<a href='http://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>; 5]</a>, block: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</pre><div class='docblock'><p>Process a block with the SHA-1 algorithm. (See more...)</p>
+
+<p>SHA-1 is a cryptographic hash function, and as such, it operates
+on an arbitrary number of bytes. This function operates on a fixed
+number of bytes. If you call this function with anything other than
+64 bytes, then it will panic! This function takes two arguments:</p>
+
+<ul>
+<li><code>state</code> is reference to an <strong>array</strong> of 5 words.</li>
+<li><code>block</code> is reference to a <strong>slice</strong> of 64 bytes.</li>
+</ul>
+
+<p>If you want the function that performs a message digest on an arbitrary
+number of bytes, then see also the <code>Sha1</code> struct above.</p>
+
+<h1 id="implementation" class='section-header'><a
+                           href="#implementation">Implementation</a></h1>
+<p>First, some background. Both ARM and Intel are releasing documentation
+that they plan to include instruction set extensions for SHA1 and SHA256
+sometime in the near future. Second, LLVM won&#39;t lower these intrinsics yet,
+so these functions were written emulate these instructions. Finally,
+the block function implemented with these emulated intrinsics turned out
+to be quite fast! What follows is a discussion of this CPU-level view
+of the SHA-1 algorithm and how it relates to the mathematical definition.</p>
+
+<p>The SHA instruction set extensions can be divided up into two categories:</p>
+
+<ul>
+<li>message work schedule update calculation (&quot;schedule&quot; v., &quot;work&quot; n.)</li>
+<li>message block 80-round digest calculation (&quot;digest&quot; v., &quot;block&quot; n.)</li>
+</ul>
+
+<p>The schedule-related functions can be used to easily perform 4 rounds
+of the message work schedule update calculation, as shown below:</p>
+<pre id='rust-example-rendered' class='rust '>
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>schedule_x4</span> {
+    (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>v0</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>v1</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>v2</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>v3</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> (
+        <span class='ident'>sha1msg2</span>(<span class='ident'>sha1msg1</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>v0</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>v1</span>) <span class='op'>^</span> <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>v2</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>v3</span>)
+    )
+}
+
+<span class='macro'>macro_rules</span><span class='macro'>!</span> <span class='ident'>round_x4</span> {
+    (<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>h0</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>h1</span>:<span class='ident'>ident</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>wk</span>:<span class='ident'>expr</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span>:<span class='ident'>expr</span>) <span class='op'>=&gt;</span> (
+        <span class='ident'>sha1rnds4</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>h0</span>, <span class='ident'>sha1_first_half</span>(<span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>h1</span>, <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>wk</span>), <span class='macro-nonterminal'>$</span><span class='macro-nonterminal'>i</span>)
+    )
+}
+</pre>
+
+<p>and also shown above is how the digest-related functions can be used to
+perform 4 rounds of the message block digest calculation.</p>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

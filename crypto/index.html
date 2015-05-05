@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `crypto` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, crypto">
+
+    <title>crypto - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'crypto', ty: 'mod', relpath: '../'};</script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>crypto</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-0' class='srclink' href='../src/crypto/lib.rs.html#7-56' title='goto source code'>[src]</a></span></h1>
+<h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='aead/index.html'
+                               title='crypto::aead'>aead</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='aes/index.html'
+                               title='crypto::aes'>aes</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='aes_gcm/index.html'
+                               title='crypto::aes_gcm'>aes_gcm</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='aesni/index.html'
+                               title='crypto::aesni'>aesni</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='aessafe/index.html'
+                               title='crypto::aessafe'>aessafe</a></td>
+                        <td class='docblock short'>
+                             <p>The <code>aessafe</code> module implements the AES algorithm completely in software without using any table
+lookups or other timing dependant mechanisms. This module actually contains two seperate
+implementations - an implementation that works on a single block at a time and a second
+implementation that processes 8 blocks in parallel. Some block encryption modes really only work if
+you are processing a single blocks (CFB, OFB, and CBC encryption for example) while other modes
+are trivially parallelizable (CTR and CBC decryption). Processing more blocks at once allows for
+greater efficiency, especially when using wide registers, such as the XMM registers available in
+x86 processors.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='bcrypt/index.html'
+                               title='crypto::bcrypt'>bcrypt</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='bcrypt_pbkdf/index.html'
+                               title='crypto::bcrypt_pbkdf'>bcrypt_pbkdf</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='blake2b/index.html'
+                               title='crypto::blake2b'>blake2b</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='blockmodes/index.html'
+                               title='crypto::blockmodes'>blockmodes</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='blowfish/index.html'
+                               title='crypto::blowfish'>blowfish</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='buffer/index.html'
+                               title='crypto::buffer'>buffer</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='chacha20/index.html'
+                               title='crypto::chacha20'>chacha20</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='chacha20poly1305/index.html'
+                               title='crypto::chacha20poly1305'>chacha20poly1305</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='curve25519/index.html'
+                               title='crypto::curve25519'>curve25519</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='digest/index.html'
+                               title='crypto::digest'>digest</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='ed25519/index.html'
+                               title='crypto::ed25519'>ed25519</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='fortuna/index.html'
+                               title='crypto::fortuna'>fortuna</a></td>
+                        <td class='docblock short'>
+                             <p>An implementation of the Fortuna CSPRNG</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='ghash/index.html'
+                               title='crypto::ghash'>ghash</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='hc128/index.html'
+                               title='crypto::hc128'>hc128</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='hkdf/index.html'
+                               title='crypto::hkdf'>hkdf</a></td>
+                        <td class='docblock short'>
+                             <p>This module implements the HMAC-based Extract-and-Expand Key
+Derivation Function as specified by  <a href="https://tools.ietf.org/html/rfc5869">https://tools.ietf.org/html/rfc5869</a>.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='hmac/index.html'
+                               title='crypto::hmac'>hmac</a></td>
+                        <td class='docblock short'>
+                             <p>This module implements the Hmac function - a Message Authentication Code using a Digest.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='mac/index.html'
+                               title='crypto::mac'>mac</a></td>
+                        <td class='docblock short'>
+                             <p>The mac module defines the Message Authentication Code (Mac) trait.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='md5/index.html'
+                               title='crypto::md5'>md5</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='pbkdf2/index.html'
+                               title='crypto::pbkdf2'>pbkdf2</a></td>
+                        <td class='docblock short'>
+                             <p>This module implements the PBKDF2 Key Derivation Function as specified by
+<a href="http://tools.ietf.org/html/rfc2898">http://tools.ietf.org/html/rfc2898</a>.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='poly1305/index.html'
+                               title='crypto::poly1305'>poly1305</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='rc4/index.html'
+                               title='crypto::rc4'>rc4</a></td>
+                        <td class='docblock short'>
+                             <p>An implementation of the RC4 (also sometimes called ARC4) stream cipher. THIS IMPLEMENTATION IS
+NOT A FIXED TIME IMPLEMENTATION.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='ripemd160/index.html'
+                               title='crypto::ripemd160'>ripemd160</a></td>
+                        <td class='docblock short'>
+                             <p>An implementation of the RIPEMD-160 cryptographic hash.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='salsa20/index.html'
+                               title='crypto::salsa20'>salsa20</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='scrypt/index.html'
+                               title='crypto::scrypt'>scrypt</a></td>
+                        <td class='docblock short'>
+                             <p>This module implements the Scrypt key derivation function as specified in [1].</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='sha1/index.html'
+                               title='crypto::sha1'>sha1</a></td>
+                        <td class='docblock short'>
+                             <p>An implementation of the SHA-1 cryptographic hash algorithm.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='sha2/index.html'
+                               title='crypto::sha2'>sha2</a></td>
+                        <td class='docblock short'>
+                             <p>An implementation of the SHA-2 cryptographic hash algorithms.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='sosemanuk/index.html'
+                               title='crypto::sosemanuk'>sosemanuk</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='symmetriccipher/index.html'
+                               title='crypto::symmetriccipher'>symmetriccipher</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='util/index.html'
+                               title='crypto::util'>util</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='mod' href='whirlpool/index.html'
+                               title='crypto::whirlpool'>whirlpool</a></td>
+                        <td class='docblock short'>
+                             <p>An implementation of the Whirlpool cryptographic hash algorithm.</p>
+
+                        </td>
+                    </tr>
+                </table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script async src="../search-index.js"></script>
+</body>
+</html>

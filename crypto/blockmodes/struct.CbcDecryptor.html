@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `CbcDecryptor` struct in crate `crypto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, CbcDecryptor">
+
+    <title>crypto::blockmodes::CbcDecryptor - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>crypto</a>::<wbr><a href='index.html'>blockmodes</a></p><script>window.sidebarCurrent = {name: 'CbcDecryptor', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>crypto</a>::<wbr><a href='index.html'>blockmodes</a>::<wbr><a class='struct' href=''>CbcDecryptor</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-27356' class='srclink' href='../../src/crypto/blockmodes.rs.html#630-632' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct CbcDecryptor&lt;T, X&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>CBC decryption mode</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../../crypto/symmetriccipher/trait.BlockDecryptor.html' title='crypto::symmetriccipher::BlockDecryptor'>BlockDecryptor</a>, X: <a class='trait' href='../../crypto/blockmodes/trait.PaddingProcessor.html' title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a>&gt; <a class='struct' href='../../crypto/blockmodes/struct.CbcDecryptor.html' title='crypto::blockmodes::CbcDecryptor'>CbcDecryptor</a>&lt;T, X&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(algo: T, padding: X, iv: <a class='struct' href='http://doc.rust-lang.org/nightly/collections/vec/struct.Vec.html' title='collections::vec::Vec'>Vec</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>&gt;) -&gt; <a class='struct' href='../../crypto/blockmodes/struct.CbcDecryptor.html' title='crypto::blockmodes::CbcDecryptor'>CbcDecryptor</a>&lt;T, <a class='struct' href='../../crypto/blockmodes/struct.DecPadding.html' title='crypto::blockmodes::DecPadding'>DecPadding</a>&lt;X&gt;&gt;</code></h4>
+<div class='docblock'><p>Create a new CBC decryption mode object</p>
+</div><h4 id='method.reset' class='method'><code>fn <a href='#method.reset' class='fnname'>reset</a>(&amp;mut self, iv: <a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a href='http://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a href='http://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>)</code></h4>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl&lt;T: <a class='trait' href='../../crypto/symmetriccipher/trait.BlockDecryptor.html' title='crypto::symmetriccipher::BlockDecryptor'>BlockDecryptor</a>, X: <a class='trait' href='../../crypto/blockmodes/trait.PaddingProcessor.html' title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a>&gt; <a class='trait' href='../../crypto/symmetriccipher/trait.Decryptor.html' title='crypto::symmetriccipher::Decryptor'>Decryptor</a> for <a class='struct' href='../../crypto/blockmodes/struct.CbcDecryptor.html' title='crypto::blockmodes::CbcDecryptor'>CbcDecryptor</a>&lt;T, X&gt;</code></h3><div class='impl-items'><h4 id='method.decrypt' class='method'><code>fn <a href='../../crypto/symmetriccipher/trait.Decryptor.html#method.decrypt' class='fnname'>decrypt</a>(&amp;mut self, input: &amp;mut <a class='struct' href='../../crypto/buffer/struct.RefReadBuffer.html' title='crypto::buffer::RefReadBuffer'>RefReadBuffer</a>, output: &amp;mut <a class='struct' href='../../crypto/buffer/struct.RefWriteBuffer.html' title='crypto::buffer::RefWriteBuffer'>RefWriteBuffer</a>, eof: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; <a class='enum' href='http://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='../../crypto/buffer/enum.BufferResult.html' title='crypto::buffer::BufferResult'>BufferResult</a>, <a class='enum' href='../../crypto/symmetriccipher/enum.SymmetricCipherError.html' title='crypto::symmetriccipher::SymmetricCipherError'>SymmetricCipherError</a>&gt;</code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

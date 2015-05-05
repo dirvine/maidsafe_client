@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `scrypt_simple` fn in crate `crypto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, scrypt_simple">
+
+    <title>crypto::scrypt::scrypt_simple - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>crypto</a>::<wbr><a href='index.html'>scrypt</a></p><script>window.sidebarCurrent = {name: 'scrypt_simple', ty: 'fn', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content fn">
+<h1 class='fqn'><span class='in-band'>Function <a href='../index.html'>crypto</a>::<wbr><a href='index.html'>scrypt</a>::<wbr><a class='fn' href=''>scrypt_simple</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-90885' class='srclink' href='../../src/crypto/scrypt.rs.html#272-306' title='goto source code'>[src]</a></span></h1>
+<pre class='rust fn'>pub fn scrypt_simple(password: &amp;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>, params: &amp;<a class='struct' href='../../crypto/scrypt/struct.ScryptParams.html' title='crypto::scrypt::ScryptParams'>ScryptParams</a>) -&gt; <a class='type' href='http://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='http://doc.rust-lang.org/nightly/collections/string/struct.String.html' title='collections::string::String'>String</a>&gt;</pre><div class='docblock'><p>scrypt_simple is a helper function that should be sufficient for the majority of cases where
+an application needs to use Scrypt to hash a password for storage. The result is a String that
+contains the parameters used as part of its encoding. The scrypt_check function may be used on
+a password to check if it is equal to a hashed value.</p>
+
+<h1 id="format" class='section-header'><a
+                           href="#format">Format</a></h1>
+<p>The format of the output is a modified version of the Modular Crypt Format that encodes algorithm
+used and the parameter values. If all parameter values can each fit within a single byte, a
+compact format is used (format 0). However, if any value cannot, an expanded format where the r
+and p parameters are encoded using 4 bytes (format 1) is used. Both formats use a 128-bit salt
+and a 256-bit hash. The format is indicated as &quot;rscrypt&quot; which is short for &quot;Rust Scrypt format.&quot;</p>
+
+<p>$rscrypt$<format>$<base64(log_n,r,p)>$<base64(salt)>$<based64(hash)>$</p>
+
+<h1 id="arguments" class='section-header'><a
+                           href="#arguments">Arguments</a></h1>
+<ul>
+<li>password - The password to process as a str</li>
+<li>params - The ScryptParams to use</li>
+</ul>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

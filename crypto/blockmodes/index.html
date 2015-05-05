@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `blockmodes` mod in crate `crypto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, blockmodes">
+
+    <title>crypto::blockmodes - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>crypto</a></p><script>window.sidebarCurrent = {name: 'blockmodes', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>crypto</a>::<wbr><a class='mod' href=''>blockmodes</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-25287' class='srclink' href='../../src/crypto/blockmodes.rs.html#11-1441' title='goto source code'>[src]</a></span></h1>
+<h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.CbcDecryptor.html'
+                               title='crypto::blockmodes::CbcDecryptor'>CbcDecryptor</a></td>
+                        <td class='docblock short'>
+                             <p>CBC decryption mode</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.CbcEncryptor.html'
+                               title='crypto::blockmodes::CbcEncryptor'>CbcEncryptor</a></td>
+                        <td class='docblock short'>
+                             <p>CBC encryption mode</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.CtrMode.html'
+                               title='crypto::blockmodes::CtrMode'>CtrMode</a></td>
+                        <td class='docblock short'>
+                             <p>CTR Mode</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.CtrModeX8.html'
+                               title='crypto::blockmodes::CtrModeX8'>CtrModeX8</a></td>
+                        <td class='docblock short'>
+                             <p>CTR Mode that operates on 8 blocks at a time</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.DecPadding.html'
+                               title='crypto::blockmodes::DecPadding'>DecPadding</a></td>
+                        <td class='docblock short'>
+                             <p>Wraps a PaddingProcessor so that only strip_output() will actually be called.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.EcbDecryptor.html'
+                               title='crypto::blockmodes::EcbDecryptor'>EcbDecryptor</a></td>
+                        <td class='docblock short'>
+                             <p>ECB Decryption mode</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.EcbEncryptor.html'
+                               title='crypto::blockmodes::EcbEncryptor'>EcbEncryptor</a></td>
+                        <td class='docblock short'>
+                             <p>ECB Encryption mode</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.EncPadding.html'
+                               title='crypto::blockmodes::EncPadding'>EncPadding</a></td>
+                        <td class='docblock short'>
+                             <p>Wraps a PaddingProcessor so that only pad_input() will actually be called.</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.NoPadding.html'
+                               title='crypto::blockmodes::NoPadding'>NoPadding</a></td>
+                        <td class='docblock short'>
+                             <p>No padding mode for ECB and CBC encryption</p>
+
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.PkcsPadding.html'
+                               title='crypto::blockmodes::PkcsPadding'>PkcsPadding</a></td>
+                        <td class='docblock short'>
+                             <p>PKCS padding mode for ECB and CBC encryption</p>
+
+                        </td>
+                    </tr>
+                </table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='trait' href='trait.PaddingProcessor.html'
+                               title='crypto::blockmodes::PaddingProcessor'>PaddingProcessor</a></td>
+                        <td class='docblock short'>
+                             <p>A PaddingProcessor handles adding or removing padding</p>
+
+                        </td>
+                    </tr>
+                </table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

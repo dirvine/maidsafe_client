@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `fortuna` mod in crate `crypto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, fortuna">
+
+    <title>crypto::fortuna - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>crypto</a></p><script>window.sidebarCurrent = {name: 'fortuna', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>crypto</a>::<wbr><a class='mod' href=''>fortuna</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-69072' class='srclink' href='../../src/crypto/fortuna.rs.html#7-515' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>An implementation of the Fortuna CSPRNG</p>
+
+<p>First create a <code>FortunaRng</code> object using either the <code>new_unseeded</code>
+constructor or <code>SeedableRng::from_seed</code>. Additional entropy may be
+added using the method <code>add_random_event</code>, or the underlying RNG
+maybe reseeded directly by <code>SeedableRng::reseed</code>. Note that this is
+not recommended, since the generator automatically reseeds itself
+using the data provided by <code>add_random_events</code> through an
+accumulator. The accumulator is part of Fortuna&#39;s design and using
+<code>SeedableRng::reseed</code> directly bypasses it.</p>
+
+<p>Note that the underlying block cipher is <code>AesSafe256Encryptor</code> which
+is designed to be timing-attack resistant. The speed hit from this
+is in line with a &quot;safety first&quot; API, but be aware of it.</p>
+
+<p>Fortuna was originally described in
+  Practical Cryptography, Niels Ferguson and Bruce Schneier.
+  John Wiley &amp; Sons, 2003.</p>
+
+<p>Comments throughout this file contain references of the form
+(PC 1.2.3); these refer to sections within this text.</p>
+
+<h1 id="a-note-on-forking" class='section-header'><a
+                           href="#a-note-on-forking">A note on forking</a></h1>
+<p>Proper behaviour for a CSRNG on a process fork is to reseed itself with
+the timestamp and new process ID, to ensure that after forking the child
+process does not share the same RNG state (and therefore the same output)
+as its parent.</p>
+
+<p>However, this appears not to be possible in Rust, due to
+    <a href="https://github.com/rust-lang/rust/issues/16799">https://github.com/rust-lang/rust/issues/16799</a>
+The reason is that Rust&#39;s process management all happens through its
+stdlib runtime, which explicitly does not support forking, so it provides
+no mechanism with which to detect forks.</p>
+
+<p>What this means is that if you are writing forking code (using <code>#![no_std]</code>
+say) then you need to EXPLICITLY RESEED THE RNG AFTER FORKING.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.Fortuna.html'
+                               title='crypto::fortuna::Fortuna'>Fortuna</a></td>
+                        <td class='docblock short'>
+                             <p>The <code>Fortuna</code> CSPRNG (PC 9.5)</p>
+
+                        </td>
+                    </tr>
+                </table><h2 id='constants' class='section-header'><a href="#constants">Constants</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='constant' href='constant.MIN_POOL_SIZE.html'
+                               title='crypto::fortuna::MIN_POOL_SIZE'>MIN_POOL_SIZE</a></td>
+                        <td class='docblock short'>
+                             <p>Length in bytes that the first pool must be before a &quot;catastrophic
+reseed&quot; is allowed to happen. (A direct reseed through the
+<code>SeedableRng</code> API is not affected by this limit.)</p>
+
+                        </td>
+                    </tr>
+                </table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

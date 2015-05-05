@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `aessafe` mod in crate `crypto`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, aessafe">
+
+    <title>crypto::aessafe - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='../index.html'>crypto</a></p><script>window.sidebarCurrent = {name: 'aessafe', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press 'S' to search, '?' for more options..."
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>crypto</a>::<wbr><a class='mod' href=''>aessafe</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="#" title="collapse all docs">[&minus;]</a>
+        </span><a id='src-1138' class='srclink' href='../../src/crypto/aessafe.rs.html#7-1231' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>The <code>aessafe</code> module implements the AES algorithm completely in software without using any table
+lookups or other timing dependant mechanisms. This module actually contains two seperate
+implementations - an implementation that works on a single block at a time and a second
+implementation that processes 8 blocks in parallel. Some block encryption modes really only work if
+you are processing a single blocks (CFB, OFB, and CBC encryption for example) while other modes
+are trivially parallelizable (CTR and CBC decryption). Processing more blocks at once allows for
+greater efficiency, especially when using wide registers, such as the XMM registers available in
+x86 processors.</p>
+
+<h2 id="aes-algorithm" class='section-header'><a
+                           href="#aes-algorithm">AES Algorithm</a></h2>
+<p>There are lots of places to go to on the internet for an involved description of how AES works. For
+the purposes of this description, it sufficies to say that AES is just a block cipher that takes
+a key of 16, 24, or 32 bytes and uses that to either encrypt or decrypt a block of 16 bytes. An
+encryption or decryption operation consists of a number of rounds which involve some combination of
+the following 4 basic operations:</p>
+
+<ul>
+<li>ShiftRows</li>
+<li>MixColumns</li>
+<li>SubBytes</li>
+<li>AddRoundKey</li>
+</ul>
+
+<h2 id="timing-problems" class='section-header'><a
+                           href="#timing-problems">Timing problems</a></h2>
+<p>Most software implementations of AES use a large set of lookup tables - generally at least the
+SubBytes step is implemented via lookup tables; faster implementations generally implement the
+MixColumns step this way as well. This is largely a design flaw in the AES implementation as it was
+not realized during the NIST standardization process that table lookups can lead to security
+problems [1]. The issue is that not all table lookups occur in constant time - an address that was
+recently used is looked up much faster than one that hasn&#39;t been used in a while. A careful
+adversary can measure the amount of time that each AES operation takes and use that information to
+help determine the secret key or plain text information. More specifically, its not table lookups
+that lead to these types of timing attacks - the issue is table lookups that use secret information
+as part of the address to lookup. A table lookup that is performed the exact same way every time
+regardless of the key or plaintext doesn&#39;t leak any information. This implementation uses no data
+dependant table lookups.</p>
+
+<h2 id="bit-slicing" class='section-header'><a
+                           href="#bit-slicing">Bit Slicing</a></h2>
+<p>Bit Slicing is a technique that is basically a software emulation of hardware implementation
+techniques. One of the earliest implementations of this technique was for a DES implementation [4].
+In hardware, table lookups do not present the same timing problems as they do in software, however
+they present other problems - namely that a 256 byte S-box table takes up a huge amount of space on
+a chip. Hardware implementations, thus, tend to avoid table lookups and instead calculate the
+contents of the S-Boxes as part of every operation. So, the key to an efficient Bit Sliced software
+implementation is to re-arrange all of the bits of data to process into a form that can easily be
+applied in much the same way that it would be in hardeware. It is fortunate, that AES was designed
+such that these types of hardware implementations could be very efficient - the contents of the
+S-boxes are defined by a mathematical formula.</p>
+
+<p>A hardware implementation works on single bits at a time. Unlike adding variables in software,
+however, that occur generally one at a time, hardware implementations are extremely parallel and
+operate on many, many bits at once. Bit Slicing emulates that by moving all &quot;equivalent&quot; bits into
+common registers and then operating on large groups of bits all at once. Calculating the S-box value
+for a single bit is extremely expensive, but its much cheaper when you can amortize that cost over
+128 bits (as in an XMM register). This implementation follows the same strategy as in [5] and that
+is an excellent source for more specific details. However, a short description follows.</p>
+
+<p>The input data is simply a collection of bytes. Each byte is comprised of 8 bits, a low order bit
+(bit 0) through a high order bit (bit 7). Bit slicing the input data simply takes all of the low
+order bits (bit 0) from the input data, and moves them into a single register (eg: XMM0). Next, all
+of them 2nd lowest bits are moved into their own register (eg: XMM1), and so on. After completion,
+we&#39;re left with 8 variables, each of which contains an equivalent set of bits. The exact order of
+those bits is irrevent for the implementation of the SubBytes step, however, it is very important
+for the MixColumns step. Again, see [5] for details. Due to the design of AES, its them possible to
+execute the entire AES operation using just bitwise exclusive ors and rotates once we have Bit
+Sliced the input data. After the completion of the AES operation, we then un-Bit Slice the data
+to give us our output. Clearly, the more bits that we can process at once, the faster this will go -
+thus, the version that processes 8 blocks at once is roughly 8 times faster than processing just a
+single block at a time.</p>
+
+<p>The ShiftRows step is fairly straight-forward to implement on the Bit Sliced state. The MixColumns
+and especially the SubBytes steps are more complicated. This implementation draws heavily on the
+formulas from [5], [6], and [7] to implement these steps.</p>
+
+<h2 id="implementation" class='section-header'><a
+                           href="#implementation">Implementation</a></h2>
+<p>Both implementations work basically the same way and share pretty much all of their code. The key
+is first processed to create all of the round keys where each round key is just a 16 byte chunk of
+data that is combined into the AES state by the AddRoundKey step as part of each encryption or
+decryption round. Processing the round key can be expensive, so this is done before encryption or
+decryption. Before encrypting or decrypting data, the data to be processed by be Bit Sliced into 8
+seperate variables where each variable holds equivalent bytes from the state. This Bit Sliced state
+is stored as a Bs8State<T>, where T is the type that stores each set of bits. The first
+implementation stores these bits in a u32 which permits up to 8 * 32 = 1024 bits of data to be
+processed at once. This implementation only processes a single block at a time, so, in reality, only
+512 bits are processed at once and the remaining 512 bits of the variables are unused. The 2nd
+implementation uses u32x4s - vectors of 4 u32s. Thus, we can process 8 * 128 = 4096 bits at once,
+which corresponds exactly to 8 blocks.</p>
+
+<p>The Bs8State struct implements the AesOps trait, which contains methods for each of the 4 main steps
+of the AES algorithm. The types, T, each implement the AesBitValueOps trait, which containts methods
+necessary for processing a collection or bit values and the AesOps trait relies heavily on this
+trait to perform its operations.</p>
+
+<p>The Bs4State and Bs2State struct implement operations of various subfields of the full GF(2<sup>8)</sup>
+finite field which allows for efficient computation of the AES S-Boxes. See [7] for details.</p>
+
+<h2 id="references" class='section-header'><a
+                           href="#references">References</a></h2>
+<p>[1] - &quot;Cache-Collision Timing Attacks Against AES&quot;. Joseph Bonneau and Ilya Mironov.
+      <a href="http://www.jbonneau.com/doc/BM06-CHES-aes_cache_timing.pdf">http://www.jbonneau.com/doc/BM06-CHES-aes_cache_timing.pdf</a>
+[2] - &quot;Software mitigations to hedge AES against cache-based software side channel vulnerabilities&quot;.
+      Ernie Brickell, et al. <a href="http://eprint.iacr.org/2006/052.pdf">http://eprint.iacr.org/2006/052.pdf</a>.
+[3] - &quot;Cache Attacks and Countermeasures: the Case of AES (Extended Version)&quot;.
+      Dag Arne Osvik, et al. tau.ac.il/~tromer/papers/cache.pdf‎.
+[4] - &quot;A Fast New DES Implementation in Software&quot;. Eli Biham.
+      <a href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.52.5429&amp;rep=rep1&amp;type=pdf">http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.52.5429&amp;rep=rep1&amp;type=pdf</a>.
+[5] - &quot;Faster and Timing-Attack Resistant AES-GCM&quot;. Emilia K ̈asper and Peter Schwabe.
+      <a href="http://www.chesworkshop.org/ches2009/presentations/01_Session_1/CHES2009_ekasper.pdf">http://www.chesworkshop.org/ches2009/presentations/01_Session_1/CHES2009_ekasper.pdf</a>.
+[6] - &quot;FAST AES DECRYPTION&quot;. Vinit Azad. <a href="http://webcache.googleusercontent.com/">http://webcache.googleusercontent.com/</a>
+      search?q=cache:ld_f8pSgURcJ:csusdspace.calstate.edu/bitstream/handle/10211.9/1224/
+      Vinit_Azad_MS_Report.doc%3Fsequence%3D2+&amp;cd=4&amp;hl=en&amp;ct=clnk&amp;gl=us&amp;client=ubuntu.
+[7] - &quot;A Very Compact Rijndael S-box&quot;. D. Canright.
+      <a href="http://www.dtic.mil/cgi-bin/GetTRDoc?AD=ADA434781">http://www.dtic.mil/cgi-bin/GetTRDoc?AD=ADA434781</a>.</p>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe128Decryptor.html'
+                               title='crypto::aessafe::AesSafe128Decryptor'>AesSafe128Decryptor</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe128DecryptorX8.html'
+                               title='crypto::aessafe::AesSafe128DecryptorX8'>AesSafe128DecryptorX8</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe128Encryptor.html'
+                               title='crypto::aessafe::AesSafe128Encryptor'>AesSafe128Encryptor</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe128EncryptorX8.html'
+                               title='crypto::aessafe::AesSafe128EncryptorX8'>AesSafe128EncryptorX8</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe192Decryptor.html'
+                               title='crypto::aessafe::AesSafe192Decryptor'>AesSafe192Decryptor</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe192DecryptorX8.html'
+                               title='crypto::aessafe::AesSafe192DecryptorX8'>AesSafe192DecryptorX8</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe192Encryptor.html'
+                               title='crypto::aessafe::AesSafe192Encryptor'>AesSafe192Encryptor</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe192EncryptorX8.html'
+                               title='crypto::aessafe::AesSafe192EncryptorX8'>AesSafe192EncryptorX8</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe256Decryptor.html'
+                               title='crypto::aessafe::AesSafe256Decryptor'>AesSafe256Decryptor</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe256DecryptorX8.html'
+                               title='crypto::aessafe::AesSafe256DecryptorX8'>AesSafe256DecryptorX8</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe256Encryptor.html'
+                               title='crypto::aessafe::AesSafe256Encryptor'>AesSafe256Encryptor</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                
+                    <tr class=' module-item'>
+                        <td><a class='struct' href='struct.AesSafe256EncryptorX8.html'
+                               title='crypto::aessafe::AesSafe256EncryptorX8'>AesSafe256EncryptorX8</a></td>
+                        <td class='docblock short'>
+                             
+                        </td>
+                    </tr>
+                </table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div class="shortcuts">
+            <h1>Keyboard shortcuts</h1>
+            <dl>
+                <dt>?</dt>
+                <dd>Show this help dialog</dd>
+                <dt>S</dt>
+                <dd>Focus the search field</dd>
+                <dt>&larrb;</dt>
+                <dd>Move up in search results</dd>
+                <dt>&rarrb;</dt>
+                <dd>Move down in search results</dd>
+                <dt>&#9166;</dt>
+                <dd>Go to active search result</dd>
+            </dl>
+        </div>
+        <div class="infos">
+            <h1>Search tricks</h1>
+            <p>
+                Prefix searches with a type followed by a colon (e.g.
+                <code>fn:</code>) to restrict the search to a given type.
+            </p>
+            <p>
+                Accepted types are: <code>fn</code>, <code>mod</code>,
+                <code>struct</code>, <code>enum</code>,
+                <code>trait</code>, <code>typedef</code> (or
+                <code>tdef</code>).
+            </p>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "crypto";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script async src="../../search-index.js"></script>
+</body>
+</html>

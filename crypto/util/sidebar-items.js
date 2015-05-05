@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["fixed_time_eq","Compare two vectors using a fixed number of operations. If the two vectors are not of equal length, the function returns false immediately."],["rust_crypto_util_fixed_time_eq_asm",""],["rust_crypto_util_secure_memset",""],["rust_crypto_util_supports_aesni",""],["secure_memset",""],["supports_aesni",""]]});
